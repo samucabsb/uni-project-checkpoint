@@ -1,0 +1,14 @@
+[
+  {
+    "seguidor": "samuel",
+    "seguido": "vinicius"
+  },
+  {
+    "seguidor": "samuel",
+    "seguido": "anajulia"
+  },
+  {
+    "seguidor": "vinicius",
+    "seguido": "samuel"
+  }
+]

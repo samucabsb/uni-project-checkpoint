@@ -1,0 +1,34 @@
+[
+  {
+    "nm_usuario": "admin",
+    "email_usuario": "admin@checkpoint.com",
+    "senha": "admin123",
+    "tipo_usuario": "ADMIN",
+    "bio_usuario": "Administrador do catálogo Checkpoint.",
+    "img_usuario": "https://api.dicebear.com/8.x/bottts/svg?seed=admin"
+  },
+  {
+    "nm_usuario": "samuel",
+    "email_usuario": "samuel@checkpoint.com",
+    "senha": "user123",
+    "tipo_usuario": "USER",
+    "bio_usuario": "Gosto de RPGs, narrativas fortes e jogos competitivos.",
+    "img_usuario": "https://api.dicebear.com/8.x/adventurer/svg?seed=samuel"
+  },
+  {
+    "nm_usuario": "vinicius",
+    "email_usuario": "vinicius@checkpoint.com",
+    "senha": "user123",
+    "tipo_usuario": "USER",
+    "bio_usuario": "Fã de jogos de ação e mundo aberto.",
+    "img_usuario": "https://api.dicebear.com/8.x/adventurer/svg?seed=vinicius"
+  },
+  {
+    "nm_usuario": "anajulia",
+    "email_usuario": "anajulia@checkpoint.com",
+    "senha": "user123",
+    "tipo_usuario": "USER",
+    "bio_usuario": "Apaixonada por indies, listas e boas recomendações.",
+    "img_usuario": "https://api.dicebear.com/8.x/adventurer/svg?seed=anajulia"
+  }
+]

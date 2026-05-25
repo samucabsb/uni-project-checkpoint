@@ -1,0 +1,23 @@
+[
+  {
+    "usuario": "samuel",
+    "jogo": "Elden Ring",
+    "nota": 5,
+    "comentario": "Exploração recompensadora, arte incrível e combate marcante.",
+    "data_jogada": "2026-05-01"
+  },
+  {
+    "usuario": "vinicius",
+    "jogo": "God of War",
+    "nota": 5,
+    "comentario": "Narrativa forte, ritmo excelente e combate polido.",
+    "data_jogada": "2026-05-04"
+  },
+  {
+    "usuario": "anajulia",
+    "jogo": "Hollow Knight",
+    "nota": 5,
+    "comentario": "Atmosfera, música e exploração impecáveis.",
+    "data_jogada": "2026-05-08"
+  }
+]

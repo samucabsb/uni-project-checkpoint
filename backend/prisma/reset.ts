@@ -1,0 +1,1 @@
+import fs from 'fs';import path from 'path';import {execSync} from 'child_process';const db=path.join(__dirname,'dev.db');if(fs.existsSync(db))fs.unlinkSync(db);execSync('npx prisma migrate dev --name init',{stdio:'inherit'});execSync('npm run db:import',{stdio:'inherit'});

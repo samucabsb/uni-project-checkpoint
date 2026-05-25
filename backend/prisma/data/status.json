@@ -1,0 +1,29 @@
+[
+  {
+    "usuario": "samuel",
+    "jogo": "Elden Ring",
+    "status": "ZERADO",
+    "favorito": true,
+    "top_position": 1
+  },
+  {
+    "usuario": "samuel",
+    "jogo": "God of War",
+    "status": "ZERADO",
+    "favorito": true,
+    "top_position": 2
+  },
+  {
+    "usuario": "samuel",
+    "jogo": "Hollow Knight",
+    "status": "JOGANDO",
+    "favorito": true,
+    "top_position": 3
+  },
+  {
+    "usuario": "samuel",
+    "jogo": "Minecraft",
+    "status": "QUERO_JOGAR",
+    "favorito": false
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "admin": "admin",
+    "nm_jogo": "Elden Ring",
+    "genero": "RPG de Ação",
+    "plataforma": "PC, PlayStation, Xbox",
+    "classificacao": "16+",
+    "dt_jogo": "2022-02-25",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
+    "descricao": "Mundo aberto sombrio, exploração profunda e combates memoráveis."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "God of War",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC, PlayStation",
+    "classificacao": "18+",
+    "dt_jogo": "2018-04-20",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg",
+    "descricao": "Jornada cinematográfica com combate intenso e narrativa emocional."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Minecraft",
+    "genero": "Sandbox",
+    "plataforma": "PC, Mobile, PlayStation, Xbox, Switch",
+    "classificacao": "10+",
+    "dt_jogo": "2011-11-18",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8fu6.jpg",
+    "descricao": "Construção, criatividade, exploração e sobrevivência em mundos infinitos."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "The Last of Us Part II",
+    "genero": "Ação/Aventura",
+    "plataforma": "PlayStation",
+    "classificacao": "18+",
+    "dt_jogo": "2020-06-19",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ziw.jpg",
+    "descricao": "Narrativa intensa sobre sobrevivência, escolhas e consequências."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Grand Theft Auto V",
+    "genero": "Mundo Aberto",
+    "plataforma": "PC, PlayStation, Xbox",
+    "classificacao": "18+",
+    "dt_jogo": "2013-09-17",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg",
+    "descricao": "Mundo aberto urbano com múltiplos protagonistas e missões variadas."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Red Dead Redemption 2",
+    "genero": "Mundo Aberto",
+    "plataforma": "PC, PlayStation, Xbox",
+    "classificacao": "18+",
+    "dt_jogo": "2018-10-26",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg",
+    "descricao": "Faroeste com narrativa profunda, mundo vivo e personagens marcantes."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Hollow Knight",
+    "genero": "Metroidvania",
+    "plataforma": "PC, PlayStation, Xbox, Switch",
+    "classificacao": "10+",
+    "dt_jogo": "2017-02-24",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rgi.jpg",
+    "descricao": "Metroidvania atmosférico com exploração e chefes desafiadores."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Valorant",
+    "genero": "FPS Competitivo",
+    "plataforma": "PC",
+    "classificacao": "14+",
+    "dt_jogo": "2020-06-02",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg",
+    "descricao": "FPS tático competitivo com agentes, habilidades e trabalho em equipe."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "Fortnite",
+    "genero": "Battle Royale",
+    "plataforma": "PC, Mobile, PlayStation, Xbox, Switch",
+    "classificacao": "12+",
+    "dt_jogo": "2017-07-21",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ybt.jpg",
+    "descricao": "Battle royale com construção, eventos ao vivo e forte presença cultural."
+  },
+  {
+    "admin": "admin",
+    "nm_jogo": "The Legend of Zelda: Breath of the Wild",
+    "genero": "Aventura",
+    "plataforma": "Nintendo Switch, Wii U",
+    "classificacao": "10+",
+    "dt_jogo": "2017-03-03",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg",
+    "descricao": "Aventura de mundo aberto com liberdade criativa e exploração constante."
+  }
+]

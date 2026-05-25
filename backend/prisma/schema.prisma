@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model TAB_USUARIO {
+  id_usuario    Int      @id @default(autoincrement())
+  nm_usuario    String   @unique
+  email_usuario String   @unique
+  senha_usuario String
+  tipo_usuario  String   @default("USER")
+  bio_usuario   String?
+  img_usuario   String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  jogos_criados TAB_JOGOS[]
+  avaliacoes    TAB_AVALIACAO[]
+  listas        TAB_LISTA[]
+  status_jogos  TAB_STATUS_JOGO[]
+  seguindo      TAB_FOLLOW[] @relation("usuario_seguidor")
+  seguidores    TAB_FOLLOW[] @relation("usuario_seguido")
+}
+
+model TAB_JOGOS {
+  id_jogo       Int      @id @default(autoincrement())
+  id_usuario    Int?
+  nm_jogo       String   @unique
+  img_jogo      String
+  genero        String?
+  plataforma    String?
+  classificacao String?
+  descricao     String?
+  dt_jogo       DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  usuario      TAB_USUARIO?      @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+  avaliacoes   TAB_AVALIACAO[]
+  listas       TAB_LISTA_JOGO[]
+  status_jogos TAB_STATUS_JOGO[]
+}
+
+model TAB_AVALIACAO {
+  id_avaliacao Int      @id @default(autoincrement())
+  id_usuario   Int
+  id_jogo      Int
+  nota         Int
+  comentario   String
+  data_jogada  DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
+
+  @@unique([id_usuario, id_jogo])
+  @@index([id_usuario])
+  @@index([id_jogo])
+}
+
+model TAB_LISTA {
+  id_lista   Int      @id @default(autoincrement())
+  id_usuario Int
+  nm_lista   String
+  descricao  String?
+  publica    Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  usuario TAB_USUARIO      @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogos   TAB_LISTA_JOGO[]
+
+  @@index([id_usuario])
+}
+
+model TAB_LISTA_JOGO {
+  id_lista Int
+  id_jogo  Int
+
+  lista TAB_LISTA @relation(fields: [id_lista], references: [id_lista], onDelete: Cascade)
+  jogo  TAB_JOGOS @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
+
+  @@id([id_lista, id_jogo])
+}
+
+model TAB_FOLLOW {
+  id_follow           Int      @id @default(autoincrement())
+  id_usuario_seguidor Int
+  id_usuario_seguido  Int
+  created_at          DateTime @default(now())
+
+  seguidor TAB_USUARIO @relation("usuario_seguidor", fields: [id_usuario_seguidor], references: [id_usuario], onDelete: Cascade)
+  seguido  TAB_USUARIO @relation("usuario_seguido", fields: [id_usuario_seguido], references: [id_usuario], onDelete: Cascade)
+
+  @@unique([id_usuario_seguidor, id_usuario_seguido])
+  @@index([id_usuario_seguidor])
+  @@index([id_usuario_seguido])
+}
+
+model TAB_STATUS_JOGO {
+  id_status   Int      @id @default(autoincrement())
+  id_usuario  Int
+  id_jogo     Int
+  status      String   @default("QUERO_JOGAR")
+  favorito    Boolean  @default(false)
+  top_position Int?
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
+
+  @@unique([id_usuario, id_jogo])
+  @@index([id_usuario])
+  @@index([id_jogo])
+}

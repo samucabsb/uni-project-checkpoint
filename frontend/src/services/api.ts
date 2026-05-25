@@ -1,0 +1,1 @@
+import axios from 'axios';export const api=axios.create({baseURL:'http://localhost:3333/api'});api.interceptors.request.use(c=>{const t=localStorage.getItem('@checkpoint:token');if(t)c.headers.Authorization=`Bearer ${t}`;return c});

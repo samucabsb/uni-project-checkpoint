@@ -1,0 +1,13 @@
+[
+  {
+    "usuario": "samuel",
+    "nm_lista": "Favoritos para zerar novamente",
+    "descricao": "Jogos que merecem uma segunda campanha.",
+    "publica": true,
+    "jogos": [
+      "Elden Ring",
+      "God of War",
+      "Red Dead Redemption 2"
+    ]
+  }
+]

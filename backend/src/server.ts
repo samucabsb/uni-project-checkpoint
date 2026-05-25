@@ -1,0 +1,15 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { routes } from './routes';
+import { errorMiddleware } from './middlewares/errorMiddleware';
+const app=express();
+app.use(helmet());
+app.use(cors({origin:process.env.FRONTEND_URL||'http://localhost:5173'}));
+app.use(express.json({limit:'2mb'}));
+app.use(rateLimit({windowMs:60*1000,limit:160,standardHeaders:true,legacyHeaders:false,message:{message:'Muitas requisições. Tente novamente.'}}));
+app.use('/api',routes);
+app.use(errorMiddleware);
+app.listen(Number(process.env.PORT)||3333,()=>console.log('Checkpoint V1.1 API em http://localhost:3333'));
