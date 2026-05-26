@@ -1,23 +1,30 @@
 [
   {
-    "usuario": "samuel",
+    "usuario": "gamer_br",
     "jogo": "Elden Ring",
     "nota": 5,
-    "comentario": "Exploração recompensadora, arte incrível e combate marcante.",
+    "comentario": "Uma experiência gigante, recompensadora e cheia de descobertas.",
     "data_jogada": "2026-05-01"
   },
   {
-    "usuario": "vinicius",
-    "jogo": "God of War",
+    "usuario": "gamer_br",
+    "jogo": "Red Dead Redemption 2",
     "nota": 5,
-    "comentario": "Narrativa forte, ritmo excelente e combate polido.",
-    "data_jogada": "2026-05-04"
+    "comentario": "Mundo aberto com alma. Cada detalhe parece vivo.",
+    "data_jogada": "2026-05-03"
   },
   {
-    "usuario": "anajulia",
+    "usuario": "player_one",
+    "jogo": "Valorant",
+    "nota": 4,
+    "comentario": "Competitivo, direto e excelente com equipe coordenada.",
+    "data_jogada": "2026-05-06"
+  },
+  {
+    "usuario": "casual_gamer",
     "jogo": "Hollow Knight",
     "nota": 5,
-    "comentario": "Atmosfera, música e exploração impecáveis.",
-    "data_jogada": "2026-05-08"
+    "comentario": "Atmosfera impecável e exploração viciante.",
+    "data_jogada": "2026-05-15"
   }
 ]

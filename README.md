@@ -1,23 +1,14 @@
-# Checkpoint V1.1
+# Checkpoint V1.2 Final
 
-Checkpoint V1.1 é uma rede social acadêmica/profissional para jogos, inspirada em experiências de catálogo social como Letterboxd: catálogo, avaliações, listas, feed, perfil, biblioteca pessoal, favoritos e status de jogo.
+Rede social de jogos com catálogo, avaliações, listas, biblioteca pessoal, favoritos, Top 4, perfil editável, busca inteligente e painel admin.
 
-A V1.1 prioriza **estabilidade, usabilidade e apresentação profissional**:
+## Stack
 
-- Cadastro não faz login automático: após criar conta, o usuário volta para a tela de login.
-- Feedback visual com toasts para ações importantes.
-- Botões com estado de loading.
-- Página inicial pública mais completa.
-- Página de jogo com “Minha avaliação” separada das avaliações da comunidade.
-- Biblioteca pessoal com status: Quero jogar, Jogando, Zerado, Abandonado e Favorito.
-- Top 4 jogos favoritos no perfil.
-- Listas com página individual e mosaico visual.
-- Feed com atividades recentes.
-- Admin com CRUD de jogos, usuários, avaliações e métricas.
-- SQLite local, sem Docker.
-- Seed inteligente, export/import e backup do banco.
+- Frontend: React, TypeScript, Vite, Tailwind, React Router, Axios, TanStack React Query.
+- Backend: Node.js, Express, TypeScript, Prisma, SQLite, JWT, Bcrypt, Zod.
+- Sem Docker.
 
-## Como rodar
+## Rodar o projeto
 
 ### Backend
 
@@ -46,69 +37,37 @@ App: `http://localhost:5173`
 
 ```txt
 admin / admin123
-samuel / user123
-vinicius / user123
-anajulia / user123
+gamer_br / senha123
+player_one / senha123
+casual_gamer / senha123
 ```
 
-## Persistência
+## Principais melhorias da V1.2 Final
 
-O banco local fica em:
+- Rotas em inglês com aliases em português.
+- Busca global com dropdown e debounce.
+- Filtros de catálogo com dropdowns.
+- Busca de listas da comunidade.
+- Página de lista permite adicionar/remover jogos.
+- Avaliação usa data atual como padrão.
+- Home muda quando usuário está logado.
+- Scroll animations leves com CSS/Intersection Observer.
+- Favoritos gerais separados do Top 4 do perfil.
+- Coração verde nos cards favoritados.
+- CRUD de favoritos.
+- Configuração de Top 4.
+- Perfil editável com seleção de avatar.
+- Código modular.
 
-```txt
-backend/prisma/dev.db
-```
+## Persistência e GitHub
 
-Fechar o terminal não apaga os dados. Para versionar dados oficiais no GitHub:
+O SQLite local fica em `backend/prisma/dev.db` e não deve ir para o GitHub. Para versionar dados oficiais:
 
 ```bash
 cd backend
 npm run db:export
-git add .
+cd ..
+git add backend/prisma/data
 git commit -m "Atualiza dados oficiais"
 git push
-```
-
-Em outra máquina:
-
-```bash
-npm run db:migrate
-npm run db:import
-```
-
-## Scripts úteis
-
-```bash
-npm run db:seed    # importa dados iniciais sem apagar o banco
-npm run db:export  # exporta dados atuais para JSON
-npm run db:import  # importa JSONs oficiais
-npm run db:backup  # cria backup do SQLite
-npm run db:reset   # recria banco local
-```
-
-## Estrutura
-
-```txt
-checkpoint_v1_1/
-  backend/
-    prisma/
-      schema.prisma
-      data/
-      importData.ts
-      exportData.ts
-      backup.ts
-      reset.ts
-    src/
-      routes/
-      middlewares/
-      utils/
-      server.ts
-  frontend/
-    src/
-      components/
-      context/
-      pages/
-      services/
-      App.tsx
-      main.tsx
 ```

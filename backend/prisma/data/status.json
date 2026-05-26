@@ -1,29 +1,44 @@
 [
   {
-    "usuario": "samuel",
+    "usuario": "gamer_br",
     "jogo": "Elden Ring",
     "status": "ZERADO",
     "favorito": true,
     "top_position": 1
   },
   {
-    "usuario": "samuel",
-    "jogo": "God of War",
+    "usuario": "gamer_br",
+    "jogo": "Red Dead Redemption 2",
     "status": "ZERADO",
     "favorito": true,
     "top_position": 2
   },
   {
-    "usuario": "samuel",
+    "usuario": "gamer_br",
     "jogo": "Hollow Knight",
     "status": "JOGANDO",
     "favorito": true,
     "top_position": 3
   },
   {
-    "usuario": "samuel",
-    "jogo": "Minecraft",
+    "usuario": "gamer_br",
+    "jogo": "The Legend of Zelda: Tears of the Kingdom",
     "status": "QUERO_JOGAR",
-    "favorito": false
+    "favorito": true,
+    "top_position": 4
+  },
+  {
+    "usuario": "player_one",
+    "jogo": "Valorant",
+    "status": "JOGANDO",
+    "favorito": true,
+    "top_position": 1
+  },
+  {
+    "usuario": "casual_gamer",
+    "jogo": "Minecraft",
+    "status": "JOGANDO",
+    "favorito": true,
+    "top_position": 1
   }
 ]

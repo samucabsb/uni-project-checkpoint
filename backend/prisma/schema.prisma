@@ -43,6 +43,9 @@ model TAB_JOGOS {
   avaliacoes   TAB_AVALIACAO[]
   listas       TAB_LISTA_JOGO[]
   status_jogos TAB_STATUS_JOGO[]
+
+  @@index([nm_jogo])
+  @@index([genero])
 }
 
 model TAB_AVALIACAO {
@@ -61,6 +64,7 @@ model TAB_AVALIACAO {
   @@unique([id_usuario, id_jogo])
   @@index([id_usuario])
   @@index([id_jogo])
+  @@index([created_at])
 }
 
 model TAB_LISTA {
@@ -76,6 +80,7 @@ model TAB_LISTA {
   jogos   TAB_LISTA_JOGO[]
 
   @@index([id_usuario])
+  @@index([created_at])
 }
 
 model TAB_LISTA_JOGO {
@@ -103,14 +108,14 @@ model TAB_FOLLOW {
 }
 
 model TAB_STATUS_JOGO {
-  id_status   Int      @id @default(autoincrement())
-  id_usuario  Int
-  id_jogo     Int
-  status      String   @default("QUERO_JOGAR")
-  favorito    Boolean  @default(false)
+  id_status    Int      @id @default(autoincrement())
+  id_usuario   Int
+  id_jogo      Int
+  status       String   @default("QUERO_JOGAR")
+  favorito     Boolean  @default(false)
   top_position Int?
-  updated_at  DateTime @updatedAt
-  created_at  DateTime @default(now())
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
@@ -118,4 +123,6 @@ model TAB_STATUS_JOGO {
   @@unique([id_usuario, id_jogo])
   @@index([id_usuario])
   @@index([id_jogo])
+  @@index([status])
+  @@index([favorito])
 }

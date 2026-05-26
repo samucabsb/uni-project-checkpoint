@@ -1,13 +1,25 @@
 [
   {
-    "usuario": "samuel",
-    "nm_lista": "Favoritos para zerar novamente",
-    "descricao": "Jogos que merecem uma segunda campanha.",
+    "usuario": "gamer_br",
+    "nm_lista": "Mundos abertos obrigatórios",
+    "descricao": "Jogos com exploração marcante e mundos memoráveis.",
     "publica": true,
     "jogos": [
       "Elden Ring",
-      "God of War",
-      "Red Dead Redemption 2"
+      "Red Dead Redemption 2",
+      "Grand Theft Auto V",
+      "The Legend of Zelda: Tears of the Kingdom"
+    ]
+  },
+  {
+    "usuario": "player_one",
+    "nm_lista": "Para jogar com amigos",
+    "descricao": "Jogos competitivos ou sociais para jogar em grupo.",
+    "publica": true,
+    "jogos": [
+      "Valorant",
+      "Fortnite",
+      "Minecraft"
     ]
   }
 ]

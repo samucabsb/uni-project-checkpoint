@@ -1,23 +1,23 @@
 [
   {
     "admin": "admin",
-    "nm_jogo": "Elden Ring",
-    "genero": "RPG de Ação",
-    "plataforma": "PC, PlayStation, Xbox",
-    "classificacao": "16+",
-    "dt_jogo": "2022-02-25",
-    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
-    "descricao": "Mundo aberto sombrio, exploração profunda e combates memoráveis."
+    "nm_jogo": "The Last of Us Part II",
+    "genero": "Ação/Aventura",
+    "plataforma": "PlayStation",
+    "classificacao": "18+",
+    "dt_jogo": "2020-06-19",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ziw.jpg",
+    "descricao": "Uma narrativa intensa sobre sobrevivência, trauma e consequências."
   },
   {
     "admin": "admin",
-    "nm_jogo": "God of War",
+    "nm_jogo": "God of War Ragnarök",
     "genero": "Ação/Aventura",
-    "plataforma": "PC, PlayStation",
-    "classificacao": "18+",
-    "dt_jogo": "2018-04-20",
-    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg",
-    "descricao": "Jornada cinematográfica com combate intenso e narrativa emocional."
+    "plataforma": "PlayStation",
+    "classificacao": "16+",
+    "dt_jogo": "2022-11-09",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5s5v.jpg",
+    "descricao": "A continuação da jornada de Kratos e Atreus pelos nove reinos."
   },
   {
     "admin": "admin",
@@ -27,17 +27,17 @@
     "classificacao": "10+",
     "dt_jogo": "2011-11-18",
     "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8fu6.jpg",
-    "descricao": "Construção, criatividade, exploração e sobrevivência em mundos infinitos."
+    "descricao": "Criatividade, exploração e sobrevivência em mundos infinitos."
   },
   {
     "admin": "admin",
-    "nm_jogo": "The Last of Us Part II",
-    "genero": "Ação/Aventura",
-    "plataforma": "PlayStation",
-    "classificacao": "18+",
-    "dt_jogo": "2020-06-19",
-    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ziw.jpg",
-    "descricao": "Narrativa intensa sobre sobrevivência, escolhas e consequências."
+    "nm_jogo": "Elden Ring",
+    "genero": "RPG de Ação",
+    "plataforma": "PC, PlayStation, Xbox",
+    "classificacao": "16+",
+    "dt_jogo": "2022-02-25",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
+    "descricao": "Mundo aberto sombrio, exploração profunda e combates memoráveis."
   },
   {
     "admin": "admin",
@@ -91,12 +91,12 @@
   },
   {
     "admin": "admin",
-    "nm_jogo": "The Legend of Zelda: Breath of the Wild",
+    "nm_jogo": "The Legend of Zelda: Tears of the Kingdom",
     "genero": "Aventura",
-    "plataforma": "Nintendo Switch, Wii U",
+    "plataforma": "Nintendo Switch",
     "classificacao": "10+",
-    "dt_jogo": "2017-03-03",
-    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg",
-    "descricao": "Aventura de mundo aberto com liberdade criativa e exploração constante."
+    "dt_jogo": "2023-05-12",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg",
+    "descricao": "Aventura expansiva com exploração vertical e sistemas criativos."
   }
 ]

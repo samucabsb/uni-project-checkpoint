@@ -1,1 +1,1 @@
-export default {content:['./index.html','./src/**/*.{js,ts,jsx,tsx}'],theme:{extend:{colors:{checkpoint:{bg:'#09090b',panel:'#121217',card:'#18181f',green:'#00e187',orange:'#ff9f1c',blue:'#38bdf8'}}}},plugins:[]};
+export default {content:['./index.html','./src/**/*.{js,ts,jsx,tsx}'],theme:{extend:{colors:{checkpoint:{bg:'#09090b',surface:'#111116',card:'#18181f',green:'#00e187',muted:'#71717a'}}}},plugins:[]};

@@ -1,14 +1,14 @@
 [
   {
-    "seguidor": "samuel",
-    "seguido": "vinicius"
+    "seguidor": "player_one",
+    "seguido": "gamer_br"
   },
   {
-    "seguidor": "samuel",
-    "seguido": "anajulia"
+    "seguidor": "casual_gamer",
+    "seguido": "gamer_br"
   },
   {
-    "seguidor": "vinicius",
-    "seguido": "samuel"
+    "seguidor": "gamer_br",
+    "seguido": "player_one"
   }
 ]
