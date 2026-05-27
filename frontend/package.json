@@ -1,6 +1,6 @@
 {
   "name": "checkpoint-frontend",
-  "version": "1.2.0-final",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "scripts": {
