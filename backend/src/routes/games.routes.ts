@@ -1,11 +1,7 @@
 /**
- * Rotas de Jogos — CRUD completo
- * GET    /api/games          — listar com filtros
- * GET    /api/games/search   — autocomplete
- * GET    /api/games/:id      — detalhes + avaliações
- * POST   /api/games          — criar (admin)
- * PUT    /api/games/:id      — editar (admin)
- * DELETE /api/games/:id      — excluir (admin)
+ * Rotas de Jogos — CRUD completo (v1.5)
+ * Ordenação: az | melhor | mais_avaliado | recente
+ * Distribuição de notas incluída em GET /:id
  */
 
 import { Router } from 'express';
@@ -13,12 +9,13 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { calcMedia } from '../utils/helpers';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middlewares/authMiddleware';
+import { parseId, clamp } from '../utils/validate';
 
 export const gamesRouter = Router();
 
 const jogoSchema = z.object({
-  nm_jogo:       z.string().min(2, 'Nome muito curto').max(100),
-  img_jogo:      z.string().url('URL de imagem inválida'),
+  nm_jogo:       z.string().min(2).max(100),
+  img_jogo:      z.string().url('URL inválida'),
   genero:        z.string().max(50).optional().nullable(),
   plataforma:    z.string().max(100).optional().nullable(),
   classificacao: z.string().max(10).optional().nullable(),
@@ -29,28 +26,38 @@ const jogoSchema = z.object({
 // ── GET /games ────────────────────────────────────────────
 gamesRouter.get('/', async (req, res, next) => {
   try {
-    const {
-      search = '', genero = '', ano = '',
-      classificacao = '', take = '60',
-    } = req.query as Record<string, string>;
+    const { search = '', genero = '', ano = '', classificacao = '', take = '60', sort = 'az' } =
+      req.query as Record<string, string>;
 
     const AND: unknown[] = [];
     if (search)        AND.push({ nm_jogo: { contains: search } });
     if (genero)        AND.push({ genero: { contains: genero } });
     if (classificacao) AND.push({ classificacao });
-    if (ano)           AND.push({ dt_jogo: {
-      gte: new Date(`${ano}-01-01`),
-      lte: new Date(`${ano}-12-31`),
-    }});
+    if (ano)           AND.push({ dt_jogo: { gte: new Date(`${ano}-01-01`), lte: new Date(`${ano}-12-31`) } });
+
+    const orderByMap: Record<string, unknown> = {
+      az:           { nm_jogo: 'asc'  },
+      recente:      { dt_jogo: 'desc' },
+      antigo:       { dt_jogo: 'asc'  },
+    };
+    const orderBy = orderByMap[sort] ?? { nm_jogo: 'asc' };
 
     const jogos = await prisma.tAB_JOGOS.findMany({
       where:   { AND },
-      include: { avaliacoes: { select: { nota: true } } },
-      orderBy: { nm_jogo: 'asc' },
-      take:    Math.min(100, Number(take) || 60),
+      include: {
+        avaliacoes:  { select: { nota: true } },
+        _count:      { select: { status_jogos: true } },
+      },
+      orderBy: orderBy as Parameters<typeof prisma.tAB_JOGOS.findMany>[0]['orderBy'],
+      take:    clamp(Number(take) || 60, 1, 100),
     });
 
-    return res.json(jogos.map(calcMedia));
+    const comMedia = jogos.map(calcMedia);
+
+    if (sort === 'melhor')        comMedia.sort((a, b) => (b.media || 0) - (a.media || 0));
+    else if (sort === 'mais_avaliado') comMedia.sort((a, b) => (b.total_avaliacoes || 0) - (a.total_avaliacoes || 0));
+
+    return res.json(comMedia);
   } catch (err) { next(err); }
 });
 
@@ -63,21 +70,21 @@ gamesRouter.get('/search', async (req, res, next) => {
     const jogos = await prisma.tAB_JOGOS.findMany({
       where:   { nm_jogo: { contains: q } },
       include: { avaliacoes: { select: { nota: true } } },
-      take:    8,
+      take:    6,
     });
 
     return res.json(jogos.map(j => {
-      const { media, total_avaliacoes, avaliacoes: _, ...rest } = calcMedia(j);
-      return { ...rest, media, total_avaliacoes };
+      const { avaliacoes: _, ...rest } = calcMedia(j);
+      return rest;
     }));
   } catch (err) { next(err); }
 });
 
-// ── GET /games/:id ────────────────────────────────────────
+// ── GET /games/:id — detalhes + distribuição de notas ─────
 gamesRouter.get('/:id', async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ message: 'ID inválido.' });
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
 
     const jogo = await prisma.tAB_JOGOS.findUnique({
       where:   { id_jogo: id },
@@ -85,6 +92,7 @@ gamesRouter.get('/:id', async (req, res, next) => {
         avaliacoes: {
           include: {
             usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
+            _count:  { select: { likes: true } },
           },
           orderBy: { created_at: 'desc' },
         },
@@ -94,7 +102,21 @@ gamesRouter.get('/:id', async (req, res, next) => {
 
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 
-    return res.json(calcMedia(jogo));
+    // Distribuição de notas: quantas avaliações por nota (1-10)
+    const distribuicao: Record<number, number> = {};
+    for (let i = 1; i <= 10; i++) distribuicao[i] = 0;
+    jogo.avaliacoes.forEach(a => { distribuicao[a.nota] = (distribuicao[a.nota] || 0) + 1; });
+
+    const resultado = {
+      ...calcMedia(jogo),
+      distribuicao_notas: distribuicao,
+      avaliacoes: jogo.avaliacoes.map(a => ({
+        ...a,
+        likes_count: a._count.likes,
+      })),
+    };
+
+    return res.json(resultado);
   } catch (err) { next(err); }
 });
 
@@ -102,14 +124,12 @@ gamesRouter.get('/:id', async (req, res, next) => {
 gamesRouter.post('/', authMiddleware, adminMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const dados = jogoSchema.parse(req.body);
-
     const existente = await prisma.tAB_JOGOS.findUnique({ where: { nm_jogo: dados.nm_jogo } });
     if (existente) return res.status(409).json({ message: 'Já existe um jogo com esse nome.' });
 
     const jogo = await prisma.tAB_JOGOS.create({
       data: { ...dados, dt_jogo: new Date(dados.dt_jogo), id_usuario: req.usuario!.id_usuario },
     });
-
     return res.status(201).json(jogo);
   } catch (err) { next(err); }
 });
@@ -117,8 +137,8 @@ gamesRouter.post('/', authMiddleware, adminMiddleware, async (req: AuthRequest, 
 // ── PUT /games/:id ────────────────────────────────────────
 gamesRouter.put('/:id', authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ message: 'ID inválido.' });
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
 
     const dados = jogoSchema.partial().parse(req.body);
     const data: Record<string, unknown> = { ...dados };
@@ -132,7 +152,9 @@ gamesRouter.put('/:id', authMiddleware, adminMiddleware, async (req, res, next) 
 // ── DELETE /games/:id ─────────────────────────────────────
 gamesRouter.delete('/:id', authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
+
     const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: id } });
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 

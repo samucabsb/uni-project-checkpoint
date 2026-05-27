@@ -1,8 +1,3 @@
-/**
- * Índice de rotas — registra todos os roteadores
- * Cada domínio tem seu próprio arquivo de rotas
- */
-
 import { Router } from 'express';
 import { authRouter }    from './auth.routes';
 import { gamesRouter }   from './games.routes';
@@ -14,12 +9,10 @@ import { feedRouter, adminRouter } from './feed.routes';
 
 export const routes = Router();
 
-// Health check
 routes.get('/health', (_req, res) =>
-  res.json({ status: 'ok', versao: '1.4.0', timestamp: new Date().toISOString() }),
+  res.json({ status: 'ok', versao: '1.5.0', timestamp: new Date().toISOString() }),
 );
 
-// Rotas com aliases em PT/EN para compatibilidade
 routes.use('/auth',                              authRouter);
 routes.use(['/games',    '/jogos'],              gamesRouter);
 routes.use(['/reviews',  '/avaliacoes'],         reviewsRouter);

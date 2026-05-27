@@ -5,12 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Proxy: redireciona /api para o backend — sem hardcode de URL
     proxy: {
-      '/api': {
-        target:      'http://localhost:3333',
-        changeOrigin: true,
-      },
+      '/api': { target: 'http://localhost:3333', changeOrigin: true },
     },
   },
 });

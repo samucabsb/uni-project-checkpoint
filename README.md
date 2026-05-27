@@ -1,246 +1,268 @@
-# Checkpoint v1.4
+# 🎮 Checkpoint — Rede Social de Jogos
 
-Rede social de jogos — avalie, liste, siga e descubra. Projeto Integrador UNIEURO.
+> **Projeto Integrador — UNIEURO 2025**
+> Disciplina: Projeto Integrador | Professor: Jorge Osvaldo Alves de Lima Torres
+> Equipe: Samuel · Vinícius · Ana Júlia
 
-> **Stack:** React 18 · TypeScript · Vite · Tailwind CSS · React Query · Axios  
-> **Backend:** Node.js · Express · Prisma ORM · SQLite · JWT · Bcrypt · Zod
+Checkpoint é uma rede social de jogos inspirada no Letterboxd. Permite registrar, avaliar e descobrir jogos com a comunidade — com meia estrela, likes em avaliações, perfis públicos, listas colaborativas, biblioteca pessoal e vitrine customizável.
 
 ---
 
-## Instalação e execução
+## 🚀 Início rápido
 
 ### Pré-requisitos
 
-- Node.js 18+ instalado
-- npm 9+ instalado
-- Nenhum Docker necessário — banco de dados é SQLite local
+| Ferramenta | Versão mínima |
+|---|---|
+| Node.js | 18.x ou superior |
+| npm | 9.x ou superior |
 
-### 1. Backend
+### Instalação
 
 ```bash
+# 1. Extraia o ZIP e abra no VS Code
+code checkpoint_v1_5
+
+# 2. Backend
 cd backend
 npm install
-npm run db:generate
-npm run db:migrate    
-npm run db:seed        
-npm run dev         
-```
+npm run db:setup
+npm run dev
 
-### 2. Frontend (novo terminal)
-
-```bash
+# 3. Frontend (novo terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173` no navegador.
+Abra **http://localhost:5173** no navegador.
 
 ---
 
-## Contas de teste
-
-| Usuário | Senha | Perfil |
-|---|---|---|
-| `admin` | `admin123` | Administrador |
-| `gamer_br` | `senha123` | Usuário comum |
-| `player_one` | `senha123` | Usuário comum |
-| `casual_gamer` | `senha123` | Usuário comum |
-
----
-
-## Variáveis de ambiente
-
-Arquivo: `backend/.env`
-
-| Variável | Padrão | Descrição |
-|---|---|---|
-| `DATABASE_URL` | `file:./dev.db` | Caminho do banco SQLite |
-| `JWT_SECRET` | `checkpoint_v1_4_secret` | Segredo para assinar tokens |
-| `JWT_EXPIRES_IN` | `7d` | Tempo de expiração do token |
-| `PORT` | `3333` | Porta da API |
-| `FRONTEND_URL` | `http://localhost:5173` | URL do frontend (CORS) |
-
-> ⚠️ Para produção, troque o `JWT_SECRET` por uma string longa e aleatória.
-
----
-
-## Scripts disponíveis
-
-### Backend
-
-| Script | Descrição |
-|---|---|
-| `npm run dev` | Inicia com hot reload (tsx watch) |
-| `npm run build` | Compila TypeScript para `dist/` |
-| `npm run start` | Inicia versão compilada |
-| `npm run db:generate` | Gera cliente Prisma |
-| `npm run db:migrate` | Executa migrações pendentes |
-| `npm run db:seed` | Popula banco com dados iniciais |
-| `npm run db:studio` | Abre Prisma Studio (visualizador do banco) |
-| `npm run db:reset` | Apaga e recria o banco |
-| `npm run db:export` | Exporta dados para JSON |
-| `npm run db:backup` | Faz backup dos dados |
-
-### Frontend
-
-| Script | Descrição |
-|---|---|
-| `npm run dev` | Inicia Vite dev server com proxy |
-| `npm run build` | Build de produção |
-| `npm run preview` | Preview do build |
-
----
-
-## Arquitetura
+## ⚠️ Erro mais comum e como resolver
 
 ```
-checkpoint_v1.4/
-├── backend/
+PrismaClientKnownRequestError: The table `main.TAB_AVALIACAO` does not exist
+```
+
+**Causa:** As migrações do banco de dados nunca foram aplicadas.
+
+**Solução em 1 comando:**
+```bash
+cd backend
+npm run db:setup
+```
+
+Este comando executa `prisma db push` (cria/atualiza as tabelas) seguido do seed (popula dados de teste).
+
+Se ainda falhar, tente:
+```bash
+cd backend
+npm run db:reset
+npm run db:seed
+```
+
+---
+
+## 👥 Contas de teste
+
+| Usuário | Senha | Permissão |
+|---|---|---|
+| `admin` | `admin123` | ADMIN — acesso total ao painel |
+| `gamer_br` | `senha123` | USER — perfil com biblioteca completa |
+| `player_one` | `senha123` | USER — jogador competitivo |
+| `casual_gamer` | `senha123` | USER — jogador casual |
+
+---
+
+## 📁 Estrutura do projeto
+
+```
+checkpoint_v1_5/
+├── backend/                 # API Express + Prisma
 │   ├── prisma/
-│   │   ├── schema.prisma         ← Modelos do banco de dados
-│   │   ├── importData.ts         ← Script de seed
-│   │   └── data/                 ← Dados iniciais em JSON
-│   └── src/
-│       ├── routes/               ← Uma rota por domínio
-│       │   ├── auth.routes.ts
-│       │   ├── games.routes.ts   ← CRUD completo (admin)
-│       │   ├── reviews.routes.ts
-│       │   ├── lists.routes.ts
-│       │   ├── library.routes.ts ← Favoritos + Vitrine
-│       │   ├── users.routes.ts   ← Inclui GET /users/search
-│       │   ├── feed.routes.ts    ← discover + following
-│       │   └── index.ts          ← Monta todos os roteadores
-│       ├── middlewares/
-│       │   ├── authMiddleware.ts ← Verifica JWT
-│       │   └── errorMiddleware.ts← Handler global de erros
-│       └── utils/
-│           ├── prisma.ts         ← Instância global do Prisma
-│           ├── auth.ts           ← generateToken / verifyToken
-│           └── helpers.ts        ← sanitize / calcMedia
-└── frontend/
+│   │   ├── schema.prisma    # Modelo de dados
+│   │   ├── importData.ts    # Seed de dados de teste
+│   │   └── migrations/      # Histórico de migrações
+│   ├── src/
+│   │   ├── middlewares/     # authMiddleware, errorMiddleware
+│   │   ├── routes/          # Uma rota por domínio
+│   │   ├── utils/           # auth, helpers, prisma, validate
+│   │   └── server.ts        # Entry point
+│   └── .env                 # Variáveis de ambiente
+│
+└── frontend/                # React + Vite + Tailwind
     └── src/
-        ├── pages/                ← Uma pasta por página
-        │   ├── Landing.tsx
-        │   ├── auth/
-        │   ├── feed/             ← Seguindo + Descobrir c/ busca de usuários
-        │   ├── games/
-        │   ├── library/          ← Favoritos + Vitrine
-        │   ├── lists/
-        │   ├── profile/          ← CRUD da Vitrine para o dono
-        │   └── admin/            ← CRUD completo de jogos
-        ├── components/
-        │   ├── Layout.tsx        ← Navbar + Guards de rota
-        │   ├── SearchCommand.tsx ← Busca global de jogos
-        │   └── ui.tsx            ← Button, Input, GameCard, Modal...
-        ├── context/
-        │   ├── AuthContext.tsx   ← JWT + race condition corrigida
-        │   └── ToastContext.tsx
-        ├── hooks/
-        │   └── index.ts          ← useDebounce, useReveal, useLibraryMap
-        ├── services/
-        │   └── api.ts            ← Axios c/ proxy (sem URL hardcoded)
-        └── types.ts              ← Tipos TypeScript compartilhados
+        ├── components/      # ui.tsx, Layout, Footer, SearchCommand
+        ├── context/         # AuthContext, ToastContext
+        ├── hooks/           # useDebounce, useReveal, useLibraryMap
+        ├── pages/           # Landing, Feed, Games, Profile, Library…
+        ├── services/        # api.ts (Axios configurado)
+        └── types.ts         # Tipos TypeScript compartilhados
 ```
 
 ---
 
-## Funcionalidades por versão
+## 🔧 Scripts disponíveis
 
-### v1.4 (atual)
-- **Vitrine** no perfil — 4 slots gerenciáveis (adicionar/remover/reordenar)
-- **Feed/Descobrir** — busca de usuários + seção "Jogadores da comunidade"
-- **Admin CRUD** — criar, editar inline e excluir jogos com confirmação
-- Seção de avaliações removida do Admin (não faz sentido administrativo)
-- Utilitários `sanitize` e `calcMedia` centralizados em `helpers.ts`
-- Rota `GET /users/search` para busca de usuários
-- Rota `/feed/discover` retorna usuários ativos
-- Transação atômica no `PUT /library/vitrine`
-- Renomeação: "Top 4" → "Vitrine" em todo o sistema
+### Backend (`cd backend`)
 
-### v1.3
-- Bugs críticos corrigidos (feed following, AuthContext race condition, img null)
-- Código separado em arquivos por página (fim do monolito)
-- URL da API usando proxy Vite (sem hardcode)
-- Feed seguindo retorna vazio quando sem follows
-- Filtros com dropdowns no catálogo
-- SearchCommand com debounce e navegação por teclado
-- Avatar com fallback automático
-- Modal de confirmação em vez de browser confirm()
-- Skeleton loading nas páginas
-
-### v1.2
-- Adição de jogo pela página da lista
-- Data atual como padrão na avaliação
-- Home diferente para logado vs visitante
-- Favoritos com coração verde + CRUD
-- Sistema de avatar
-- Edição de perfil completa
-- Scroll animations
-
----
-
-## Modelo de dados (resumo)
-
-| Tabela | Propósito |
+| Comando | O que faz |
 |---|---|
-| `TAB_USUARIO` | Usuários, avatars, bio, tipo |
-| `TAB_JOGOS` | Catálogo de jogos |
-| `TAB_AVALIACAO` | Avaliações (1 por usuário por jogo) |
-| `TAB_LISTA` | Listas curadas de jogos |
-| `TAB_LISTA_JOGO` | Relação N:N entre lista e jogo |
-| `TAB_FOLLOW` | Relação de seguimento entre usuários |
-| `TAB_STATUS_JOGO` | Status, favorito e posição na Vitrine |
+| `npm run dev` | Inicia servidor em modo watch (hot reload) |
+| `npm run db:setup` | **Cria tabelas + popula dados de teste** (use no primeiro setup) |
+| `npm run db:migrate` | Aplica migrações pendentes |
+| `npm run db:seed` | Popula dados de teste (sem recriar tabelas) |
+| `npm run db:studio` | Abre o Prisma Studio (interface visual do banco) |
+| `npm run build` | Compila TypeScript para produção |
 
-A coluna `top_position` em `TAB_STATUS_JOGO` armazena a posição na Vitrine (1–4 ou null).
+### Frontend (`cd frontend`)
 
----
-
-## API — Principais endpoints
-
-```
-GET  /api/health                         Status da API
-POST /api/auth/register                  Criar conta
-POST /api/auth/login                     Login
-GET  /api/auth/me                        Perfil logado
-
-GET  /api/games?search=&genero=&ano=     Listar jogos
-GET  /api/games/search?q=                Autocomplete
-GET  /api/games/:id                      Detalhes + avaliações
-POST /api/games                          Criar (admin)
-PUT  /api/games/:id                      Editar (admin)
-DELETE /api/games/:id                    Excluir (admin)
-
-GET  /api/users/search?q=                Buscar usuários (novo v1.4)
-GET  /api/users/:id                      Perfil completo
-PUT  /api/users/:id                      Editar perfil
-POST /api/users/:id/follow               Seguir
-DELETE /api/users/:id/follow             Deixar de seguir
-PUT  /api/users/:id/tipo                 Promover/rebaixar (admin)
-
-GET  /api/feed/discover                  Atividades + usuários ativos
-GET  /api/feed/following                 Feed de seguidos
-
-GET  /api/library?status=                Minha biblioteca
-POST /api/library/games/:id/status       Atualizar status
-POST /api/library/games/:id/favorite     Favoritar
-DELETE /api/library/games/:id/favorite   Desfavoritar
-PUT  /api/library/vitrine                Salvar Vitrine (v1.4)
-
-GET  /api/lists?search=                  Listas públicas
-POST /api/lists                          Criar lista
-POST /api/lists/:id/games               Adicionar jogo à lista
-DELETE /api/lists/:id/games/:id_jogo    Remover jogo da lista
-
-GET  /api/admin/dashboard               Métricas (admin)
-```
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Inicia Vite em modo desenvolvimento |
+| `npm run build` | Compila para produção |
+| `npm run preview` | Visualiza o build de produção |
 
 ---
 
-## Observações técnicas
+## 🌐 Variáveis de ambiente
 
-- **SQLite**: banco de dados em arquivo local, zero configuração. Para produção, migrar para PostgreSQL alterando o `provider` no `schema.prisma`.
-- **Proxy Vite**: o frontend usa `baseURL: '/api'`. O `vite.config.ts` redireciona para `localhost:3333`. Sem URL hardcoded.
-- **React Query**: cache automático de 60s, retry 1 vez, sem refetch ao focar janela.
-- **JWT**: tokens de 7 dias. O interceptor do Axios redireciona para `/login` em caso de 401.
-- **Vitrine**: a rota `PUT /library/vitrine` recebe o estado completo (até 4 slots) e substitui tudo em transação atômica. O cliente deve sempre enviar todos os slots desejados.
+O arquivo `backend/.env` já vem configurado para desenvolvimento local.
+Para mudar configurações, edite:
+
+```env
+DATABASE_URL="file:./dev.db"        # Banco SQLite local
+JWT_SECRET="sua_chave_secreta"       # Mín. 20 caracteres — OBRIGATÓRIO
+JWT_EXPIRES_IN="7d"                  # Expiração do token
+PORT=3333                            # Porta da API
+FRONTEND_URL="http://localhost:5173" # URL do frontend (CORS)
+```
+
+> **Atenção:** O servidor não sobe sem JWT_SECRET configurado. Isso é intencional por segurança.
+
+---
+
+## 🔌 Endpoints da API
+
+Base URL: `http://localhost:3333/api`
+
+| Rota | Método | Auth | Descrição |
+|---|---|---|---|
+| `/health` | GET | — | Status da API |
+| `/feed/stats` | GET | — | Contadores públicos |
+| `/feed/discover` | GET | — | Atividades da comunidade |
+| `/feed/following` | GET | ✅ | Feed de quem você segue |
+| `/auth/register` | POST | — | Criar conta |
+| `/auth/login` | POST | — | Login |
+| `/auth/me` | GET | ✅ | Dados do usuário logado |
+| `/games` | GET | — | Listar jogos (filtros, sort) |
+| `/games/:id` | GET | — | Detalhes + distribuição de notas |
+| `/reviews` | POST | ✅ | Criar/editar avaliação |
+| `/reviews/:id/like` | POST | ✅ | Curtir avaliação |
+| `/users/:id` | GET | — | Perfil público |
+| `/users/:id/followers` | GET | — | Seguidores |
+| `/users/:id/following` | GET | — | Seguindo |
+| `/library` | GET | ✅ | Biblioteca pessoal |
+| `/library/vitrine` | PUT | ✅ | Atualizar vitrine |
+| `/lists` | GET | — | Listas públicas |
+| `/admin/dashboard` | GET | 🔐 | Métricas (admin) |
+
+---
+
+## ⭐ Sistema de avaliação (meia estrela)
+
+As notas são armazenadas internamente em escala **1-10** e exibidas em **0.5 a 5 estrelas**:
+
+| Nota interna | Estrelas exibidas |
+|---|---|
+| 1 | ★☆☆☆☆ (0.5) |
+| 2 | ★☆☆☆☆ (1.0) |
+| 5 | ★★☆☆☆ (2.5) |
+| 8 | ★★★★☆ (4.0) |
+| 10 | ★★★★★ (5.0) |
+
+Fórmula: `estrelas = nota / 2`
+
+---
+
+## 🏗️ Arquitetura
+
+```
+┌──────────────────┐       HTTP/JSON       ┌──────────────────┐
+│  React (Vite)    │ ◄─── /api proxy ────► │  Express API     │
+│  port 5173       │                        │  port 3333       │
+└──────────────────┘                        └────────┬─────────┘
+                                                     │ Prisma ORM
+                                                     ▼
+                                            ┌──────────────────┐
+                                            │  SQLite (dev.db) │
+                                            │  7 tabelas       │
+                                            └──────────────────┘
+```
+
+**Por que SQLite?** Simplicidade para desenvolvimento e apresentação acadêmica. Para produção, altere `provider = "sqlite"` para `"postgresql"` em `schema.prisma` e atualize `DATABASE_URL`.
+
+---
+
+## 🔐 Segurança implementada
+
+- JWT_SECRET obrigatório no startup (sem fallback)
+- Rate limit: 200 req/min geral, **10 req/min para `/auth/login`**
+- Senhas com bcrypt (salt 10)
+- Helmet.js para headers HTTP seguros
+- Auth opcional nos perfis públicos (sem exposição de dados)
+- Validação de IDs em todas as rotas (helper `parseId`)
+- Verificação de existência antes de operações destrutivas
+- Listas privadas protegidas por autorização
+
+---
+
+## 🚫 Funcionalidades planejadas para v1.6
+
+Itens que ficaram fora do escopo desta versão:
+
+- Likes em listas
+- Comentários em avaliações
+- Diário de jogadas (múltiplas sessões por jogo)
+- Feed de atividades (TAB_ATIVIDADE)
+- Drag-and-drop na Vitrine
+- Paginação/infinite scroll
+- Menu mobile responsivo
+- Internacionalização (i18n)
+
+---
+
+## 📝 Changelog v1.5
+
+### Novidades
+- ⭐ Meia estrela (escala 1-10 interna)
+- 👍 Likes em avaliações (com contador)
+- 📊 Distribuição de notas na página do jogo
+- 🌐 Perfil público (sem necessidade de login)
+- 📈 Estatísticas de biblioteca no perfil
+- 👥 Modal de seguidores/seguindo clicáveis
+- 🦶 Footer em todas as páginas
+- 🔍 Busca global (jogos + usuários na navbar)
+- 📊 Seção de estatísticas na landing (estilo Letterboxd)
+- 🔃 Ordenação no catálogo (A-Z, melhor avaliado, mais avaliado, mais recente)
+- 📝 Comentário opcional nas avaliações
+
+### Correções
+- 🐛 **Bug crítico:** `db:setup` resolve "table does not exist"
+- 🔒 JWT_SECRET obrigatório (sem fallback "secret")
+- 🔒 Rate limit específico para login (10/min)
+- 🔒 Permissões de listas: valida dono/admin antes de alterar
+- 🔒 Listas privadas protegidas corretamente
+- 🏗️ Busca de listas movida para o banco (não mais em JS)
+- 🎯 `parseId` helper em todas as rotas
+- 🎨 `styles.css` formatado (não minificado)
+- 🗝️ React keys corretas nos mapas de status (usa `id_status`)
+- 🔄 `useReveal` com singleton guard (evita observers duplicados)
+- ✉️ Formulário de criar lista escondido para não-logados
+- 🔀 404 page para rotas inexistentes
+- 📋 Admin com 3 abas: Dashboard, Jogos, Usuários
+
+---
+
+*Checkpoint v1.5 — Desenvolvido como Projeto Integrador UNIEURO 2025*

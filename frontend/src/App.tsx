@@ -1,5 +1,6 @@
 /**
- * App.tsx — roteamento principal do Checkpoint v1.4
+ * Roteamento — Checkpoint v1.5
+ * Perfis e listas são públicos (sem necessidade de login para ver)
  */
 
 import { Route, Routes } from 'react-router-dom';
@@ -14,12 +15,12 @@ import { Lists }           from './pages/lists/Lists';
 import { ListDetails }     from './pages/lists/ListDetails';
 import Profile             from './pages/profile/Profile';
 import AdminPage           from './pages/admin/Admin';
+import NotFound            from './pages/NotFound';
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Rotas públicas */}
         <Route path="/"           element={<Landing />}     />
         <Route path="/login"      element={<Login />}       />
         <Route path="/cadastro"   element={<Register />}    />
@@ -28,13 +29,10 @@ export default function App() {
         <Route path="/jogos/:id"  element={<GameDetails />} />
         <Route path="/listas"     element={<Lists />}       />
         <Route path="/listas/:id" element={<ListDetails />} />
-
-        {/* Rotas privadas (requerem login) */}
-        <Route path="/biblioteca"   element={<Private><Library /></Private>}       />
-        <Route path="/usuarios/:id" element={<Private><Profile /></Private>}       />
-
-        {/* Admin */}
-        <Route path="/admin" element={<AdminOnly><Private><AdminPage /></Private></AdminOnly>} />
+        <Route path="/usuarios/:id" element={<Profile />}   />   {/* público */}
+        <Route path="/biblioteca"   element={<Private><Library /></Private>} />
+        <Route path="/admin"        element={<AdminOnly><Private><AdminPage /></Private></AdminOnly>} />
+        <Route path="*"             element={<NotFound />}  />
       </Route>
     </Routes>
   );

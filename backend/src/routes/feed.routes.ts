@@ -1,23 +1,33 @@
 /**
- * Rotas do Feed e Admin
+ * Feed e Admin — v1.5
  */
 
 import { Router } from 'express';
 import { prisma } from '../utils/prisma';
-import { sanitize, calcMedia } from '../utils/helpers';
+import { sanitizeUser, calcMedia } from '../utils/helpers';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middlewares/authMiddleware';
 
 export const feedRouter  = Router();
 export const adminRouter = Router();
 
+// ── GET /feed/stats — estatísticas públicas (Landing) ─────
+feedRouter.get('/stats', async (_req, res, next) => {
+  try {
+    const [jogos, usuarios, avaliacoes] = await Promise.all([
+      prisma.tAB_JOGOS.count(),
+      prisma.tAB_USUARIO.count(),
+      prisma.tAB_AVALIACAO.count(),
+    ]);
+    return res.json({ jogos, usuarios, avaliacoes });
+  } catch (err) { next(err); }
+});
+
 // ── GET /feed/discover ────────────────────────────────────
-// Retorna: avaliações recentes, listas públicas, jogos novos, jogadores ativos
-// v1.4: inclui usuários ativos na resposta
 feedRouter.get('/discover', async (_req, res, next) => {
   try {
     const [reviews, lists, games, recentReviewers] = await Promise.all([
       prisma.tAB_AVALIACAO.findMany({
-        include:  { usuario: true, jogo: true },
+        include:  { usuario: true, jogo: true, _count: { select: { likes: true } } },
         orderBy:  { created_at: 'desc' },
         take:     20,
       }),
@@ -32,16 +42,12 @@ feedRouter.get('/discover', async (_req, res, next) => {
         orderBy: { created_at: 'desc' },
         take:    8,
       }),
-      // Usuários que avaliaram mais recentemente (únicos)
       prisma.tAB_AVALIACAO.findMany({
         distinct: ['id_usuario'],
         include:  {
           usuario: {
             select: {
-              id_usuario:   true,
-              nm_usuario:   true,
-              img_usuario:  true,
-              bio_usuario:  true,
+              id_usuario: true, nm_usuario: true, img_usuario: true, bio_usuario: true,
               _count: { select: { avaliacoes: true, seguidores: true } },
             },
           },
@@ -54,7 +60,8 @@ feedRouter.get('/discover', async (_req, res, next) => {
     return res.json({
       reviews: reviews.map(r => ({
         ...r,
-        usuario: sanitize(r.usuario as unknown as Record<string, unknown>),
+        usuario:     sanitizeUser(r.usuario as unknown as Record<string, unknown>),
+        likes_count: r._count.likes,
       })),
       lists,
       games: games.map(calcMedia),
@@ -64,7 +71,6 @@ feedRouter.get('/discover', async (_req, res, next) => {
 });
 
 // ── GET /feed/following ───────────────────────────────────
-// v1.3 fix mantido: retorna [] quando não segue ninguém
 feedRouter.get('/following', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const follows = await prisma.tAB_FOLLOW.findMany({
@@ -77,7 +83,7 @@ feedRouter.get('/following', authMiddleware, async (req: AuthRequest, res, next)
 
     const reviews = await prisma.tAB_AVALIACAO.findMany({
       where:   { id_usuario: { in: ids } },
-      include: { usuario: true, jogo: true },
+      include: { usuario: true, jogo: true, _count: { select: { likes: true } } },
       orderBy: { created_at: 'desc' },
       take:    30,
     });
@@ -85,7 +91,8 @@ feedRouter.get('/following', authMiddleware, async (req: AuthRequest, res, next)
     return res.json(
       reviews.map(r => ({
         ...r,
-        usuario: sanitize(r.usuario as unknown as Record<string, unknown>),
+        usuario:     sanitizeUser(r.usuario as unknown as Record<string, unknown>),
+        likes_count: r._count.likes,
       })),
     );
   } catch (err) { next(err); }
@@ -104,7 +111,7 @@ adminRouter.get('/dashboard', authMiddleware, adminMiddleware, async (_req, res,
 
     const todasAv    = await prisma.tAB_AVALIACAO.findMany({ select: { nota: true } });
     const mediaGeral = todasAv.length
-      ? Number((todasAv.reduce((s, a) => s + a.nota, 0) / todasAv.length).toFixed(1))
+      ? Number(((todasAv.reduce((s, a) => s + a.nota, 0) / todasAv.length) / 2).toFixed(1))
       : 0;
 
     return res.json({ totais: { usuarios, jogos, avaliacoes, listas, status, mediaGeral } });

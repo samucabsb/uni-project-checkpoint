@@ -1,4 +1,4 @@
-// Tipos compartilhados do Checkpoint v1.4
+// Tipos compartilhados — Checkpoint v1.5
 
 export type Usuario = {
   id_usuario:    number;
@@ -12,33 +12,37 @@ export type Usuario = {
   avaliacoes?:  Avaliacao[];
   listas?:      Lista[];
   status_jogos?: StatusJogo[];
+  estatisticas?: { zerados: number; jogando: number; quero_jogar: number; favoritos: number };
 };
 
 export type Jogo = {
-  id_jogo:          number;
-  nm_jogo:          string;
-  img_jogo:         string;
-  genero?:          string | null;
-  plataforma?:      string | null;
-  classificacao?:   string | null;
-  descricao?:       string | null;
-  dt_jogo:          string;
-  media?:           number;
-  total_avaliacoes?: number;
-  avaliacoes?:      Avaliacao[];
-  _count?:          { status_jogos: number };
+  id_jogo:               number;
+  nm_jogo:               string;
+  img_jogo:              string;
+  genero?:               string | null;
+  plataforma?:           string | null;
+  classificacao?:        string | null;
+  descricao?:            string | null;
+  dt_jogo:               string;
+  media?:                number;              // escala 0.5-5.0 (display)
+  total_avaliacoes?:     number;
+  avaliacoes?:           Avaliacao[];
+  _count?:               { status_jogos: number };
+  distribuicao_notas?:   Record<number, number>; // chave: 1-10
 };
 
 export type Avaliacao = {
   id_avaliacao: number;
   id_usuario:   number;
   id_jogo:      number;
-  nota:         number;
-  comentario:   string;
-  data_jogada?: string | null;
-  created_at:   string;
-  usuario?:     Pick<Usuario, 'id_usuario' | 'nm_usuario' | 'img_usuario'>;
-  jogo?:        Jogo;
+  nota:          number;                      // 1-10 (interno)
+  comentario?:   string | null;               // v1.5: opcional
+  data_jogada?:  string | null;
+  created_at:    string;
+  usuario?:      Pick<Usuario, 'id_usuario' | 'nm_usuario' | 'img_usuario'>;
+  jogo?:         Jogo;
+  likes_count?:  number;                      // v1.5
+  ja_curtiu?:    boolean;                     // v1.5
 };
 
 export type Lista = {
@@ -56,19 +60,17 @@ export type StatusJogo = {
   id_status:    number;
   id_usuario:   number;
   id_jogo:      number;
-  status:       'QUERO_JOGAR' | 'JOGANDO' | 'ZERADO' | 'ABANDONADO';
-  favorito:     boolean;
-  top_position: number | null;  // 1-4 → posição na Vitrine; null → não está na Vitrine
-  jogo:         Jogo;
+  status:        'QUERO_JOGAR' | 'JOGANDO' | 'ZERADO' | 'ABANDONADO';
+  favorito:      boolean;
+  top_position:  number | null;
+  jogo:          Jogo;
 };
 
-// Payload do /feed/discover — v1.4: inclui users
 export type DiscoverData = {
   reviews: Avaliacao[];
   lists:   Lista[];
   games:   Jogo[];
-  users:   Pick<Usuario, 'id_usuario' | 'nm_usuario' | 'img_usuario' | 'bio_usuario' | '_count'>[];
+  users:   UsuarioCard[];
 };
 
-// Usuário resumido para busca e cards
 export type UsuarioCard = Pick<Usuario, 'id_usuario' | 'nm_usuario' | 'img_usuario' | 'bio_usuario' | '_count'>;
