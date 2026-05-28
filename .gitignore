@@ -1,6 +1,35 @@
+# ── Dependências ──────────────────────────────────────────
 node_modules/
+
+# ── Build e cache ─────────────────────────────────────────
 dist/
-.env
+.vite/
+*.tsbuildinfo
+
+# ── Banco de dados ────────────────────────────────────────
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
+
+# ── Prisma ────────────────────────────────────────────────
 prisma/migrations/
+
+# ── Variáveis de ambiente ─────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Sistema operacional ───────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editores ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.swp
