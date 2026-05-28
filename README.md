@@ -1,322 +1,556 @@
-# Checkpoint v1.6 — Rede Social de Jogos
+<div align="center">
 
-> Projeto Integrador — UNIEURO  
-> Disciplina: Projeto Integrador  
-> Professor: Jorge Osvaldo Alves de Lima Torres  
-> Integrantes: Samuel, Vinícius, Ana Júlia
+# 🎮 Checkpoint
 
----
+**Uma rede social para gamers avaliarem, organizarem e descobrirem jogos.**
 
-## Sobre o projeto
-
-O **Checkpoint** é uma rede social para gamers inspirada no Letterboxd. Os usuários podem registrar jogos na biblioteca, escrever avaliações com nota e comentário, criar listas temáticas, seguir outros jogadores e acompanhar um feed de atividades sociais em tempo real.
+Inspirado no modelo social do Letterboxd, o Checkpoint permite registrar sua jornada gamer,
+avaliar jogos com meia estrela, criar listas temáticas, montar uma vitrine de favoritos,
+seguir outros jogadores e acompanhar atividades da comunidade em tempo real.
 
 ---
 
-## Stack tecnológica
+![Version](https://img.shields.io/badge/versão-1.6.1-22c55e?style=for-the-badge)
+![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
+![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-339933?style=for-the-badge)
+![Database](https://img.shields.io/badge/banco-Prisma%20%2B%20SQLite-2d3748?style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/linguagem-TypeScript-3178c6?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-facc15?style=for-the-badge)
 
-| Camada | Tecnologia |
-|---|---|
-| Backend | Node.js · Express · TypeScript |
-| ORM / Banco | Prisma ORM · SQLite |
-| Autenticação | JWT · Bcrypt |
-| Validação | Zod |
-| Frontend | React · TypeScript · Vite |
-| Estilização | Tailwind CSS |
-| Estado servidor | TanStack Query (React Query) |
-| HTTP client | Axios |
-| Roteamento | React Router v6 |
-| Ícones | Lucide React |
+**UNIEURO — Projeto Integrador**  
+Samuel · Vinícius · Ana Júlia  
+Prof. Jorge Osvaldo A. L. Torres
+
+</div>
 
 ---
 
-## Pré-requisitos
+## 📋 Índice
 
-- **Node.js** 18 ou superior
-- **npm** 9 ou superior
+- [Sobre o projeto](#-sobre-o-projeto)
+- [Funcionalidades](#-funcionalidades)
+- [Stack tecnológica](#-stack-tecnológica)
+- [Pré-requisitos](#-pré-requisitos)
+- [Instalação e execução](#-instalação-e-execução)
+- [Scripts disponíveis](#-scripts-disponíveis)
+- [Usuários de teste](#-usuários-de-teste)
+- [Estrutura de pastas](#-estrutura-de-pastas)
+- [Rotas da API](#-rotas-da-api)
+- [Banco de dados](#-banco-de-dados)
+- [Variáveis de ambiente](#-variáveis-de-ambiente)
+- [Solução de problemas](#-solução-de-problemas)
+- [Changelog](#-changelog)
 
 ---
 
-## Instalação e execução
+## 🎯 Sobre o projeto
 
-### 1. Backend
+O **Checkpoint** nasceu como projeto integrador da UNIEURO com o objetivo de unir desenvolvimento full stack com um produto que simule o mercado real. A inspiração principal é o [Letterboxd](https://letterboxd.com/) — uma rede social para cinema — adaptada para o universo dos videogames.
+
+O sistema foi construído do zero com TypeScript em todas as camadas, arquitetura REST, autenticação JWT, validação com Zod e um frontend em React que comunica com o backend via Axios + React Query.
+
+---
+
+## ✨ Funcionalidades
+
+### 👤 Usuários e autenticação
+- Cadastro com nome, e-mail e senha (normalização automática em lowercase)
+- Login com JWT (token válido por 7 dias)
+- Editar bio e foto de perfil
+- Perfil público (acessível sem login)
+- Seguir e deixar de seguir outros jogadores
+- Vitrine: até 4 jogos favoritos em destaque no perfil
+
+### 🎮 Jogos
+- Catálogo com filtros por gênero, plataforma, ano e classificação
+- Ordenação por nome, data, nota e mais avaliados
+- Página individual com média, distribuição de notas e avaliações
+- Listas que contêm o jogo
+- Botões de status rápido (Zerado, Jogando, Quero jogar, Abandonado) e Favoritar
+
+### ⭐ Avaliações
+- Nota de 0.5 a 5.0 estrelas (escala interna 1–10 com meia estrela)
+- Comentário opcional
+- Data de quando jogou (bloqueio de datas futuras)
+- Likes nas avaliações
+- Página individual com comentários
+- Excluir avaliação (dono ou admin)
+
+### 📋 Listas
+- Criar listas públicas ou privadas
+- Adicionar e remover jogos
+- Ordenação manual com botões ↑↓
+- Curtir listas de outros jogadores
+
+### 📚 Biblioteca pessoal
+- Status de cada jogo: `QUERO_JOGAR`, `JOGANDO`, `ZERADO`, `ABANDONADO`
+- Marcar favoritos
+- Vitrine do perfil com Top 4
+
+### 📓 Diário de jogos
+- Registrar múltiplas sessões por jogo
+- Nota e comentário por sessão (opcionais)
+- Histórico agrupado por mês
+- Aba "Diário" no perfil de cada usuário
+
+### 📰 Feed social
+- **Minhas atividades** — suas próprias ações registradas
+- **Seguindo** — timeline de atividades de quem você segue
+- **Descobrir** — atividades da comunidade + jogadores ativos
+- **Em alta** — trending por semana, mês ou todos os tempos
+
+### 🔍 Busca
+- Busca global unificada: jogos, jogadores e listas em um único campo
+- Resultados com seções separadas no dropdown
+
+### 🛡️ Painel Admin
+- Dashboard com totais (usuários, jogos, avaliações, listas, atividades)
+- Criar, editar e excluir jogos do catálogo
+
+---
+
+## 🛠️ Stack tecnológica
+
+| Camada | Tecnologia | Motivo |
+|---|---|---|
+| **Runtime** | Node.js 18+ | Suporte LTS estável |
+| **Framework** | Express 4 | Simples, maduro, bem documentado |
+| **Linguagem** | TypeScript | Type safety em todo o projeto |
+| **ORM** | Prisma 5 | Schema declarativo, queries type-safe |
+| **Banco** | SQLite (dev) | Zero configuração, ideal para acadêmico |
+| **Auth** | JWT + Bcrypt | Padrão de mercado para APIs REST |
+| **Validação** | Zod | Schema validation com inferência TypeScript |
+| **Frontend** | React 18 + Vite | SPA performático com HMR |
+| **Estado** | TanStack Query | Cache inteligente + sincronização server state |
+| **HTTP** | Axios | Interceptors para token automático |
+| **Roteamento** | React Router v6 | Rotas declarativas com loaders |
+| **Estilização** | Tailwind CSS | Utility-first, produtivo |
+| **Ícones** | Lucide React | Consistentes e acessíveis |
+
+---
+
+## 📦 Pré-requisitos
+
+- **Node.js** 18 ou superior — [nodejs.org](https://nodejs.org)
+- **npm** 9 ou superior (incluído com o Node)
+
+Verifique com:
+```bash
+node --version   # deve mostrar v18.x.x ou superior
+npm --version    # deve mostrar 9.x.x ou superior
+```
+
+---
+
+## 🚀 Instalação e execução
+
+### 1. Extraia o projeto
+
+```bash
+unzip checkpoint_v1_6_1.zip
+cd checkpoint_v1_6_1
+```
+
+### 2. Configure e inicie o backend
 
 ```bash
 cd backend
+
+# Instala dependências
 npm install
-npm run db:setup 
-npm run dev        
+
+# OBRIGATÓRIO antes do db:setup — gera o cliente Prisma
+npx prisma generate
+
+# Cria o banco SQLite e popula com dados de teste
+npm run db:setup
+
+# Inicia o servidor em modo desenvolvimento (hot-reload)
+npm run dev
+# → API rodando em http://localhost:3333
 ```
 
-### 2. Frontend (novo terminal)
+### 3. Configure e inicie o frontend (novo terminal)
 
 ```bash
 cd frontend
 npm install
-npm run dev       
+npm run dev
+# → App rodando em http://localhost:5173
 ```
 
-Acesse: **http://localhost:5173**
+Acesse: **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
-## Scripts disponíveis
+## 📜 Scripts disponíveis
 
 ### Backend (`/backend`)
 
-| Script | O que faz |
-|---|---|
-| `npm run dev` | Inicia o servidor com hot-reload (tsx watch) |
-| `npm run build` | Compila TypeScript para JavaScript |
-| `npm start` | Inicia o build compilado (produção) |
-| `npm run db:setup` | Aplica o schema + popula dados iniciais |
-| `npm run db:reset` | Reseta o banco e repopula (⚠ apaga tudo) |
-| `npm run db:studio` | Abre o Prisma Studio (interface visual do banco) |
+| Script | Comando interno | Descrição |
+|---|---|---|
+| `npm run dev` | `tsx watch src/server.ts` | Servidor com hot-reload |
+| `npm run build` | `tsc` | Compila TypeScript |
+| `npm start` | `node dist/server.js` | Inicia build de produção |
+| `npm run db:setup` | `prisma db push && tsx prisma/importData.ts` | Cria banco + popula seed |
+| `npm run db:reset` | `prisma db push --force-reset && tsx prisma/importData.ts` | Reseta e repopula (**apaga tudo**) |
+| `npm run db:studio` | `prisma studio` | Interface visual do banco em localhost:5555 |
 
 ### Frontend (`/frontend`)
 
-| Script | O que faz |
-|---|---|
-| `npm run dev` | Inicia o servidor de desenvolvimento Vite |
-| `npm run build` | Gera build de produção em `/dist` |
-| `npm run preview` | Pré-visualiza o build de produção |
-
----
-
-## Variáveis de ambiente
-
-### `/backend/.env`
-
-```env
-DATABASE_URL="file:./dev.db"   # Caminho do banco SQLite
-JWT_SECRET="checkpoint_secret_key_dev"  # Troque em produção!
-PORT=3001
-NODE_ENV=development
-```
-
-> O arquivo `.env` já vem configurado e pronto para rodar localmente.  
-> **Em produção:** use um `JWT_SECRET` forte e considere migrar para PostgreSQL.
-
----
-
-## Usuários de teste
-
-| Usuário | Senha | Perfil |
+| Script | Comando interno | Descrição |
 |---|---|---|
-| `admin` | `admin123` | Administrador (acesso ao painel) |
-| `gamer_br` | `senha123` | Usuário comum |
-| `player_one` | `senha123` | Usuário comum |
-| `casual_gamer` | `senha123` | Usuário comum |
+| `npm run dev` | `vite` | Dev server com HMR |
+| `npm run build` | `tsc && vite build` | Build de produção em `/dist` |
+| `npm run preview` | `vite preview` | Preview do build local |
 
 ---
 
-## Arquitetura do sistema
+## 👤 Usuários de teste
+
+Criados automaticamente pelo seed (`npm run db:setup`):
+
+| Usuário | Senha | Tipo | Observações |
+|---|---|---|---|
+| `admin` | `admin123` | 🛡️ Admin | Acesso ao painel admin, pode criar/editar/excluir jogos |
+| `gamer_br` | `senha123` | Usuário | 6 avaliações, vitrine completa (Top 4), listas |
+| `player_one` | `senha123` | Usuário | Especialista em FPS e indies, segue gamer_br |
+| `casual_gamer` | `senha123` | Usuário | Gosta de histórias, segue gamer_br |
+
+> **Dica de apresentação:** Faça login como `gamer_br`, explore o perfil, a vitrine, o diário e o feed. Depois entre como `player_one` para ver o feed "Seguindo" com as atividades de quem você segue.
+
+---
+
+## 📁 Estrutura de pastas
 
 ```
-checkpoint_v1_6/
+checkpoint_v1_6_1/
+│
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma        # Definição do banco com enums e relações
-│   │   └── importData.ts        # Seed de dados iniciais (12 jogos, 4 usuários)
+│   │   ├── schema.prisma          # Definição do banco (tabelas, relações, índices)
+│   │   └── importData.ts          # Seed de dados iniciais (12 jogos, 4 usuários)
+│   │
 │   └── src/
 │       ├── middlewares/
-│       │   ├── authMiddleware.ts # JWT + optionalAuth
-│       │   └── errorMiddleware.ts # Tratamento global de erros
+│       │   ├── authMiddleware.ts  # JWT decode + optionalAuth
+│       │   └── errorMiddleware.ts # Tratamento global (Zod + Prisma + genérico)
+│       │
 │       ├── routes/
-│       │   ├── auth.routes.ts    # Registro e login
-│       │   ├── games.routes.ts   # CRUD jogos (admin) + hub social
-│       │   ├── reviews.routes.ts # Avaliações + likes + comentários
-│       │   ├── lists.routes.ts   # Listas + likes + ordenação
-│       │   ├── library.routes.ts # Biblioteca do usuário + vitrine
-│       │   ├── users.routes.ts   # Perfil + follow/unfollow
-│       │   ├── feed.routes.ts    # Feed de atividades + trending
-│       │   ├── search.routes.ts  # Busca global unificada
-│       │   ├── diary.routes.ts   # Diário de sessões
-│       │   └── index.ts          # Registro de todas as rotas
-│       └── utils/
-│           ├── activities.ts     # Log de atividades sociais (falha silenciosa)
-│           ├── auth.ts           # Geração e verificação de JWT
-│           ├── helpers.ts        # sanitizeUser, calcMedia
-│           ├── prisma.ts         # Cliente Prisma singleton
-│           └── validate.ts       # parseId, clamp, notaParaEstrelas
+│       │   ├── auth.routes.ts     # POST /register, POST /login, GET /me
+│       │   ├── games.routes.ts    # CRUD jogos + hub social
+│       │   ├── reviews.routes.ts  # Avaliações + likes + comentários
+│       │   ├── lists.routes.ts    # Listas + likes + ordenação
+│       │   ├── library.routes.ts  # Biblioteca (status, favoritos, vitrine)
+│       │   ├── users.routes.ts    # Perfil + follow + edição + vitrine
+│       │   ├── feed.routes.ts     # Feed social + trending + atividades
+│       │   ├── search.routes.ts   # Busca global unificada
+│       │   ├── diary.routes.ts    # Diário de sessões
+│       │   └── index.ts           # Registra todas as rotas em /api
+│       │
+│       ├── utils/
+│       │   ├── activities.ts      # logAtividade() — falha silenciosa
+│       │   ├── auth.ts            # generateToken + verifyToken
+│       │   ├── helpers.ts         # sanitizeUser + calcMedia
+│       │   ├── prisma.ts          # Cliente Prisma singleton
+│       │   └── validate.ts        # parseId + clamp
+│       │
+│       └── server.ts              # Express app + middlewares + start
 │
 └── frontend/
     └── src/
         ├── components/
-        │   ├── ui.tsx            # Button, Input, Stars, Modal, GameCard, ReviewCard...
-        │   ├── Layout.tsx        # Navbar responsiva (mobile hamburger)
-        │   ├── SearchCommand.tsx # Busca global (jogos + usuários + listas)
-        │   └── Footer.tsx
+        │   ├── ui.tsx             # Button, Input, Stars, Modal, GameCard, ReviewCard...
+        │   ├── Layout.tsx         # Navbar responsiva (hamburger mobile + Esc)
+        │   ├── SearchCommand.tsx  # Busca global dropdown (jogos + usuários + listas)
+        │   └── Footer.tsx         # Rodapé com links e versão
+        │
         ├── context/
-        │   ├── AuthContext.tsx   # Estado de autenticação global
-        │   └── ToastContext.tsx  # Notificações com auto-dismiss e fechar
+        │   ├── AuthContext.tsx    # Estado global de autenticação + refreshMe
+        │   └── ToastContext.tsx   # Notificações (max 3, deduplicação, auto-dismiss)
+        │
         ├── hooks/
-        │   └── index.ts          # useReveal (MutationObserver), useDebounce, useLibraryMap
+        │   └── index.ts           # useReveal, useDebounce, useLibraryMap, useClickOutside
+        │
         ├── pages/
-        │   ├── Landing.tsx       # Home: trending, stats, catálogo
-        │   ├── auth/             # Login e cadastro
-        │   ├── feed/Feed.tsx     # Timeline + trending + discover
-        │   ├── games/            # Catálogo e detalhe do jogo
-        │   ├── lists/            # Listas com likes e ordenação
-        │   ├── profile/          # Perfil com vitrine, stats e diário
-        │   ├── reviews/          # Página individual com comentários
-        │   ├── diary/            # Diário de sessões
-        │   ├── library/          # Biblioteca do usuário
-        │   └── admin/            # Painel administrativo
-        ├── services/api.ts       # Instância Axios configurada
-        └── types.ts              # Todos os tipos TypeScript compartilhados
+        │   ├── Landing.tsx        # Home pública (hero, stats, trending, catálogo)
+        │   ├── auth/index.tsx     # Login e cadastro
+        │   ├── feed/Feed.tsx      # Minhas atividades + Seguindo + Descobrir + Em alta
+        │   ├── games/
+        │   │   ├── Games.tsx      # Catálogo com filtros e ordenação
+        │   │   └── GameDetails.tsx # Hub social do jogo
+        │   ├── lists/
+        │   │   ├── Lists.tsx      # Listas públicas com likes
+        │   │   └── ListDetails.tsx # Detalhes + ordenação manual
+        │   ├── profile/Profile.tsx # Perfil + vitrine + abas + editar
+        │   ├── reviews/ReviewDetails.tsx # Review individual + comentários
+        │   ├── diary/Diary.tsx    # Diário de sessões
+        │   ├── library/Library.tsx # Biblioteca pessoal
+        │   └── admin/Admin.tsx    # Painel admin
+        │
+        ├── services/api.ts        # Axios com interceptor de token
+        └── types.ts               # Todos os tipos TypeScript compartilhados
 ```
 
 ---
 
-## Funcionalidades v1.6
+## 🔌 Rotas da API
 
-### Novas features
-- **Feed de atividades** — timeline social de quem você segue (avaliou, favoritou, criou lista, seguiu, etc.)
-- **Trending** — jogos mais avaliados e reviews mais curtidas da semana/mês/todos os tempos
-- **Likes em listas** — botão curtir em todas as listas da comunidade
-- **Busca global unificada** — um único request busca jogos + usuários + listas
-- **Página de review individual** (`/reviews/:id`) — review completa com comentários
-- **Comentários em reviews** — discussão diretamente na avaliação
-- **Diário de jogos** (`/diario`) — histórico de múltiplas sessões por jogo
-- **GameDetails como hub social** — listas que contêm o jogo, reviews populares/recentes
-- **Perfil aprimorado** — vitrine em destaque, estatísticas visuais, abas (visão geral, avaliações, listas, diário)
-- **Ordenação manual de listas** — botões ↑↓ para reordenar jogos
-- **Navbar mobile** com menu hamburger, Esc fecha
+Todas as rotas têm prefixo `/api`. Autenticação via `Authorization: Bearer <token>`.
 
-### Correções de bugs
-- **Seções da landing somiam** ao recarregar → `useReveal` reescrito com `MutationObserver`
-- **Imagens quebradas** nos cards → `onError` com fallback em todas as imagens
-- **N+1 queries** em reviews → `getLikedSet()` resolve em 2 queries ao invés de N+1
-- **Vitrine com posição duplicada** → `@@unique([id_usuario, top_position])` no schema
+### Autenticação
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| POST | `/auth/register` | — | Criar conta |
+| POST | `/auth/login` | — | Login, retorna token + user |
+| GET | `/auth/me` | ✅ | Dados do usuário logado |
 
-### Melhorias técnicas
-- Enums no Prisma (`TipoUsuario`, `StatusJogo`, `TipoAtividade`) — type-safe no TypeScript
-- Normalização de `nm_usuario` e `email_usuario` (lowercase + trim no cadastro)
-- Índices no banco em campos de consulta frequente
-- Toast com duração customizável por tipo e botão de fechar manual
-- `aria-label` em todos os botões de ação (acessibilidade)
-- Fechar modais com tecla `Esc`
-- `GameCard` mobile-friendly: link "Ver jogo" sempre visível (não depende de hover)
+### Jogos
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/games` | — | Listar com filtros (`search`, `genero`, `ano`, `sort`) |
+| GET | `/games/popular` | — | Mais avaliados por período |
+| GET | `/games/search?q=` | — | Busca rápida por nome |
+| GET | `/games/:id` | — | Detalhe completo + avaliações + listas |
+| POST | `/games` | 🛡️ Admin | Criar jogo |
+| PUT | `/games/:id` | 🛡️ Admin | Editar jogo |
+| DELETE | `/games/:id` | 🛡️ Admin | Excluir jogo |
+
+### Avaliações
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/reviews` | — | Recentes (40) |
+| GET | `/reviews/popular` | — | Mais curtidas por período |
+| GET | `/reviews/:id` | — | Review individual |
+| POST | `/reviews` | ✅ | Criar ou atualizar avaliação |
+| DELETE | `/reviews/:id` | ✅ | Excluir (dono ou admin) |
+| POST | `/reviews/:id/like` | ✅ | Curtir |
+| DELETE | `/reviews/:id/like` | ✅ | Descurtir |
+| GET | `/reviews/:id/comments` | — | Listar comentários |
+| POST | `/reviews/:id/comments` | ✅ | Comentar |
+| DELETE | `/reviews/comments/:id` | ✅ | Excluir comentário |
+
+### Listas
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/lists` | — | Listas públicas |
+| GET | `/lists/popular` | — | Mais curtidas |
+| GET | `/lists/user/:id` | — | Listas de um usuário |
+| GET | `/lists/:id` | — | Detalhe da lista |
+| POST | `/lists` | ✅ | Criar lista |
+| PUT | `/lists/:id` | ✅ | Editar |
+| DELETE | `/lists/:id` | ✅ | Excluir |
+| POST | `/lists/:id/games` | ✅ | Adicionar jogo |
+| DELETE | `/lists/:id/games/:id_jogo` | ✅ | Remover jogo |
+| PUT | `/lists/:id/games/order` | ✅ | Reordenar |
+| POST | `/lists/:id/like` | ✅ | Curtir lista |
+| DELETE | `/lists/:id/like` | ✅ | Descurtir lista |
+
+### Usuários
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/users/search?q=` | — | Buscar por nome |
+| GET | `/users/:id` | — | Perfil público completo |
+| PUT | `/users/me` | ✅ | Atualizar bio, avatar, senha |
+| POST | `/users/vitrine` | ✅ | Adicionar jogo à vitrine |
+| DELETE | `/users/vitrine/:position` | ✅ | Remover da vitrine |
+| POST | `/users/:id/follow` | ✅ | Seguir |
+| DELETE | `/users/:id/unfollow` | ✅ | Deixar de seguir |
+
+### Feed e descoberta
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/feed/stats` | — | Totais globais |
+| GET | `/feed/me` | ✅ | Minhas atividades |
+| GET | `/feed/following` | ✅ | Timeline de quem você segue |
+| GET | `/feed/discover` | — | Atividades da comunidade |
+| GET | `/feed/trending?periodo=` | — | Trending (semana/mês/todos) |
+
+### Busca e diário
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/search?q=` | — | Busca global (jogos + usuários + listas) |
+| GET | `/diary` | ✅ | Meu diário |
+| POST | `/diary` | ✅ | Adicionar entrada |
+| PUT | `/diary/:id` | ✅ | Editar entrada |
+| DELETE | `/diary/:id` | ✅ | Excluir entrada |
+| GET | `/diary/user/:id` | — | Diário público de um usuário |
 
 ---
 
-## Banco de dados (SQLite + Prisma)
+## 🗄️ Banco de dados
 
-O banco é criado automaticamente com `npm run db:setup`. Não precisa instalar nada separado.
+### Diagrama simplificado
 
-**Para visualizar o banco graficamente:**
-```bash
-cd backend
-npx prisma studio   # Abre em http://localhost:5555
+```
+TAB_USUARIO ──┬── TAB_AVALIACAO ──── TAB_LIKE_REVIEW
+              │                  └── TAB_COMENTARIO_REVIEW
+              ├── TAB_LISTA ──────── TAB_LISTA_JOGO ── TAB_JOGOS
+              │               └──── TAB_LIKE_LISTA
+              ├── TAB_STATUS_JOGO ── TAB_JOGOS
+              ├── TAB_FOLLOW
+              ├── TAB_ATIVIDADE
+              └── TAB_DIARIO_JOGO ── TAB_JOGOS
 ```
 
-**Para resetar e repopular:**
-```bash
-cd backend
-npm run db:reset
+### Tabelas
+
+| Tabela | Descrição |
+|---|---|
+| `TAB_USUARIO` | Usuários com tipo (`USER`/`ADMIN`) |
+| `TAB_JOGOS` | Catálogo de jogos |
+| `TAB_AVALIACAO` | Avaliações (única por usuário/jogo) |
+| `TAB_LIKE_REVIEW` | Curtidas em avaliações |
+| `TAB_COMENTARIO_REVIEW` | Comentários nas avaliações |
+| `TAB_LISTA` | Listas de jogos |
+| `TAB_LISTA_JOGO` | Relação lista↔jogo com posição manual |
+| `TAB_LIKE_LISTA` | Curtidas em listas |
+| `TAB_FOLLOW` | Relação de seguimento |
+| `TAB_STATUS_JOGO` | Status de jogo na biblioteca + vitrine |
+| `TAB_ATIVIDADE` | Feed de atividades sociais |
+| `TAB_DIARIO_JOGO` | Entradas do diário de sessões |
+
+### Decisões de design
+
+- **SQLite** para desenvolvimento e apresentações. Para produção, altere `provider = "postgresql"` no schema.
+- **`db push`** em vez de migrations — ideal para protótipos e ambientes acadêmicos.
+- **Nota 1–10** internamente, exibida como 0.5–5.0 estrelas (divisão por 2).
+- **Atividades com falha silenciosa** — se `logAtividade()` falhar, a ação principal não é afetada.
+
+---
+
+## ⚙️ Variáveis de ambiente
+
+O arquivo `/backend/.env` já vem configurado para desenvolvimento:
+
+```env
+# Banco de dados SQLite
+DATABASE_URL="file:./dev.db"
+
+# Segredo do JWT — TROQUE em produção com uma string forte e aleatória
+JWT_SECRET="checkpoint_v1_6_secret_minimo_32_chars_ok"
+JWT_EXPIRES_IN="7d"
+
+# Porta da API
+PORT=3333
+
+# URL do frontend (para CORS)
+FRONTEND_URL="http://localhost:5173"
+
+# Ambiente
+NODE_ENV="development"
+
+# Ignora erro de checksum Prisma em redes com proxy
+PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ```
 
----
-
-## Rotas da API
-
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/auth/register` | Criar conta |
-| POST | `/auth/login` | Login |
-| GET | `/auth/me` | Dados do usuário logado |
-| GET | `/games` | Listar jogos (com filtros) |
-| GET | `/games/:id` | Detalhes do jogo + reviews + listas |
-| GET | `/games/popular` | Jogos populares por período |
-| GET | `/reviews` | Reviews recentes |
-| GET | `/reviews/popular` | Reviews mais curtidas |
-| GET | `/reviews/:id` | Review individual |
-| POST | `/reviews/:id/comments` | Comentar em uma review |
-| GET | `/reviews/:id/comments` | Listar comentários |
-| POST | `/lists` | Criar lista |
-| POST | `/lists/:id/like` | Curtir lista |
-| PUT | `/lists/:id/games/order` | Reordenar jogos da lista |
-| GET | `/feed/following` | Timeline de atividades de quem você segue |
-| GET | `/feed/trending` | Trending por período |
-| GET | `/search?q=` | Busca global (jogos + usuários + listas) |
-| GET | `/diary` | Diário do usuário logado |
-| POST | `/diary` | Adicionar entrada no diário |
-| GET | `/users/:id` | Perfil público completo |
-| POST | `/users/:id/follow` | Seguir usuário |
-| GET | `/admin/dashboard` | Dashboard (admin only) |
+> ⚠️ **Nunca** commite o `.env` com segredos reais em repositórios públicos.
 
 ---
 
-## Solução de problemas
+## 🔧 Solução de problemas
 
-### ❌ Erro: "@prisma/client did not initialize yet"
+### ❌ `@prisma/client did not initialize yet`
 
-Ocorre quando `npm run db:setup` falha antes de gerar o cliente Prisma. Execute manualmente:
+O cliente Prisma precisa ser gerado antes de rodar o servidor:
 
 ```bash
 cd backend
-npx prisma generate   # Gera o cliente Prisma
-npm run db:setup      # Cria o banco e popula com dados
+npx prisma generate   # ← OBRIGATÓRIO antes do db:setup
+npm run db:setup
 npm run dev
 ```
 
-### ❌ Erro de download do Prisma em rede com proxy/firewall
+### ❌ Download Prisma bloqueado por proxy/firewall (laboratório)
 
-O Prisma precisa baixar um binário nativo (~30 MB) durante o `prisma generate`. Em redes com proxy (ex: laboratório de faculdade), isso pode falhar.
+O Prisma baixa um binário nativo durante `prisma generate`. Em redes restritas:
 
-**Solução A — Via variável de ambiente (mais simples):**
+**Opção A — Variável de ambiente:**
 ```bash
 # Windows PowerShell
 $env:PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 npx prisma generate
-npm run db:setup
 ```
 
-**Solução B — Configurar proxy do npm:**
+**Opção B — Configurar proxy do npm:**
 ```bash
-npm config set proxy http://ENDEREÇO_DO_PROXY:PORTA
-npm config set https-proxy http://ENDEREÇO_DO_PROXY:PORTA
-npm install
+npm config set proxy http://ENDERECO_PROXY:PORTA
+npm config set https-proxy http://ENDERECO_PROXY:PORTA
 ```
 
-**Solução C — Gerar na sua máquina e copiar (mais confiável):**
-1. Gere o projeto normalmente em uma rede sem restrições
-2. Comprima a pasta `node_modules/.prisma` em ZIP
-3. Leve o ZIP para a máquina restrita e extraia em `backend/node_modules/.prisma`
+**Opção C — Levar node_modules (mais confiável):**
+1. Gere `node_modules/.prisma` em uma rede sem restrições
+2. Compacte essa pasta e leve para o laboratório
+3. Extraia em `backend/node_modules/.prisma`
 4. Execute apenas `npm run db:setup`
 
-### ❌ Telas em branco ou sem dados
+### ❌ Tela em branco após login
 
-- Verifique se o backend está rodando: acesse `http://localhost:3333/api/health`
-- Certifique-se de ter rodado `npm run db:setup` no backend
-- Abra o DevTools (F12) → Console para ver erros específicos
+Verifique se o backend está rodando:
+```bash
+curl http://localhost:3333/api/health
+# deve retornar: {"status":"ok","versao":"1.6.1",...}
+```
+
+Abra o DevTools (F12) → aba Console para ver erros específicos.
+
+### ❌ Imagens de jogos não carregam
+
+As imagens usam o Steam CDN (`cdn.cloudflare.steamstatic.com`). Se estiver offline, os placeholders coloridos aparecem automaticamente. Para adicionar imagens locais, edite as URLs no `importData.ts` e rode `npm run db:reset`.
 
 ### ❌ Erro de CORS
 
-- Certifique-se que `FRONTEND_URL=http://localhost:5173` no `.env` do backend
-- Frontend deve estar rodando na porta 5173 (`npm run dev`)
-
-## Observações
-
-1. **SQLite** é ideal para desenvolvimento e apresentações acadêmicas. Para produção real, migre para PostgreSQL alterando `provider = "postgresql"` no schema e ajustando `DATABASE_URL`.
-
-2. O **JWT_SECRET** no `.env` é para desenvolvimento. Nunca use em produção sem trocar por uma string forte e aleatória.
-
-3. As **imagens dos jogos** são URLs externas. Se alguma URL expirar, o fallback exibe um placeholder colorido com o nome do jogo.
-
-4. O sistema usa **`db:push`** em vez de migrations. Para um ambiente de produção com dados reais, prefira `prisma migrate`.
-
-5. A pasta `node_modules` e o arquivo `dev.db` são excluídos do ZIP automaticamente.
+Certifique-se que `FRONTEND_URL=http://localhost:5173` no `.env` do backend e que o frontend está na porta 5173.
 
 ---
 
-## Versões
+## 📅 Changelog
 
-| Versão | Destaques |
-|---|---|
-| v1.0 | MVP: jogos, biblioteca, autenticação |
-| v1.2 | Avaliações com estrelas, perfil público |
-| v1.4 | Listas, follows, vitrine, painel admin |
-| v1.5 | Likes em reviews, UI polida, seeds ricos |
-| v1.6 | Feed de atividades, trending, comentários, likes em listas, busca unificada, diário, perfil aprimorado, mobile, acessibilidade |
+### v1.6.1 (atual)
+- **CRITICAL FIX** Reordenamento de rotas em `users.routes.ts`: `/me`, `/vitrine`, `/search` agora ficam antes de `/:id`, eliminando bugs de perfil sem login, edição de avatar e vitrine
+- **CRITICAL FIX** Reordenamento em `reviews.routes.ts`: `/popular` e `/comments/:id` antes de `/:id`
+- **FIX** Validação de data futura em avaliações (backend + frontend)
+- **FIX** Toast duplicado no cadastro eliminado com limpeza de `location.state`
+- **FIX** Toast com deduplicação (mesma mensagem não repete) e máximo de 3 simultâneos
+- **FIX** Clique nas listas não propagava para o botão de like (`stopPropagation`)
+- **FIX** ReviewCard no perfil agora inclui `usuario` corretamente (backend retorna objeto completo)
+- **FIX** Avatar aceita string vazia para limpar foto
+- **FEATURE** `PasswordInput` com toggle mostrar/ocultar senha em login, cadastro e alteração
+- **FEATURE** Ícone do seletor de data agora aparece em verde no tema escuro
+- **FEATURE** Vitrine vazia no próprio perfil exibe CTA "Montar Vitrine" com modal de busca
+- **FEATURE** Feed com nova aba "Minhas atividades" (`GET /feed/me`)
+- **IMPROVEMENT** `errorMiddleware` com tratamento detalhado de erros Prisma
+- **IMPROVEMENT** `postinstall` removido do `package.json` (evita problemas em redes bloqueadas)
+- **IMPROVEMENT** `@types/express` fixado na versão 4.x
+
+### v1.6.0
+- Feed de atividades sociais (`TAB_ATIVIDADE`) com 8 tipos de ação
+- Trending: jogos + reviews + listas por período
+- Likes em listas com contador
+- Busca global unificada (jogos + usuários + listas)
+- Página de review individual com comentários
+- Diário de jogos agrupado por mês
+- GameDetails como hub social
+- Perfil com vitrine, estatísticas visuais e abas
+- Ordenação manual de listas
+- Navbar mobile com hamburger
+- Fix crítico: `useReveal` adicionava `active` mas CSS esperava `show`
+
+### v1.5.0
+- Likes em avaliações
+- Distribuição de notas em barras
+- Perfil público com `optionalAuth`
+- Admin com 3 abas
+- Footer em todas as páginas
+- Página 404
+- Meia estrela no sistema de avaliação
+
+---
+
+<div align="center">
+
+Feito com ☕ e muito ~~bug fix~~ carinho.
+
+**Checkpoint** · UNIEURO 2025/2026
+
+</div>

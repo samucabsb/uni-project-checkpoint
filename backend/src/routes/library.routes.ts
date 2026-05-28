@@ -45,7 +45,7 @@ libraryRouter.post('/games/:id/status', authMiddleware, async (req: AuthRequest,
     const schema = z.object({
       status:       z.enum(['QUERO_JOGAR', 'JOGANDO', 'ZERADO', 'ABANDONADO']).optional(),
       favorito:     z.boolean().optional(),
-      top_position: z.number().int().min(1).max(4).nullable().optional(),
+      // top_position removido: gerenciado exclusivamente por PUT /library/vitrine
     });
     const dados = schema.parse(req.body);
 

@@ -1,6 +1,6 @@
 {
   "name": "checkpoint-backend",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "API do Checkpoint — Projeto Integrador UNIEURO",
   "main": "src/server.ts",
   "scripts": {
@@ -13,8 +13,7 @@
     "db:seed": "tsx prisma/importData.ts",
     "db:setup": "prisma db push && tsx prisma/importData.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/importData.ts",
-    "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -30,7 +29,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.5.0",
     "prisma": "^5.22.0",

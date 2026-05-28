@@ -23,6 +23,26 @@ feedRouter.get('/stats', async (_req, res, next) => {
   } catch (err) { next(err); }
 });
 
+
+// ── GET /feed/me — atividades do próprio usuário ─────────
+feedRouter.get('/me', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const atividades = await prisma.tAB_ATIVIDADE.findMany({
+      where:   { id_usuario: req.usuario!.id_usuario },
+      include: {
+        usuario:      { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
+        usuario_alvo: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
+        jogo:         true,
+        avaliacao:    { include: { _count: { select: { likes: true } } } },
+        lista:        { include: { _count: { select: { likes: true } } } },
+      },
+      orderBy: { created_at: 'desc' },
+      take:    50,
+    });
+    return res.json(atividades);
+  } catch (err) { next(err); }
+});
+
 // ── GET /feed/discover ────────────────────────────────────
 feedRouter.get('/discover', async (_req, res, next) => {
   try {

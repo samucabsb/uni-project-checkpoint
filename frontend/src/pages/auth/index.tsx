@@ -1,107 +1,133 @@
-import { FormEvent, useState, useEffect } from 'react';
+/**
+ * Páginas de autenticação — v1.6.1
+ * FIX: toast duplicado no cadastro eliminado
+ * FIX: campo de senha com toggle show/hide (olhinho)
+ * FIX: location.state limpo após usar mensagem
+ */
+
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Gamepad2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Button, Input } from '../../components/ui';
+import { Button, PasswordInput, Input } from '../../components/ui';
 
-function AuthBox({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center p-4 app-bg">
-      <div className="w-full max-w-md surface rounded-3xl p-8">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-checkpoint-green text-black font-black text-lg">C</div>
-          <span className="text-xl font-black">Checkpoint</span>
-        </div>
-        <h1 className="text-4xl font-black">{title}</h1>
-        {subtitle && <p className="mt-2 text-zinc-400">{subtitle}</p>}
-        <div className="mt-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
+// ── Login ─────────────────────────────────────────────────
 export function Login() {
-  const { login } = useAuth();
-  const { toast } = useToast();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const [nm, setNm]       = useState('');
-  const [pw, setPw]       = useState('');
+  const { login, isAuthenticated } = useAuth();
+  const { toast }   = useToast();
+  const navigate    = useNavigate();
+  const location    = useLocation();
+  const [form, setForm]     = useState({ nm_usuario: '', senha_usuario: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const msg = (location.state as { message?: string })?.message;
-    if (msg) toast(msg);
-  }, []);
+    if (isAuthenticated) { navigate('/feed'); return; }
+    // Mensagem de redirecionamento pós-cadastro — mostrar UMA vez, limpar o state
+    const msg = (location.state as { message?: string } | null)?.message;
+    if (msg) {
+      toast(msg, 'success');
+      // Limpa o state para não re-exibir ao voltar para a página
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function submit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.nm_usuario || !form.senha_usuario) return toast('Preencha todos os campos.', 'error');
     setLoading(true);
     try {
-      await login(nm, pw);
-      toast('Login realizado com sucesso!');
+      await login(form.nm_usuario, form.senha_usuario);
       navigate('/feed');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Erro ao entrar.';
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Usuário ou senha incorretos.';
       toast(msg, 'error');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   return (
-    <AuthBox title="Entrar" subtitle="Acesse sua conta Checkpoint.">
-      <form onSubmit={submit} className="space-y-4">
-        <Input label="Usuário" value={nm} onChange={e => setNm(e.target.value)} autoComplete="username" required />
-        <Input label="Senha" type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" required />
-        <Button loading={loading} className="w-full">Entrar</Button>
+    <AuthLayout title="Bem-vindo de volta" subtitle="Entre na sua conta para continuar.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Nome de usuário" value={form.nm_usuario} autoComplete="username"
+          onChange={e => setForm(f => ({ ...f, nm_usuario: e.target.value }))} placeholder="seu_usuario"/>
+        <PasswordInput label="Senha" value={form.senha_usuario} autoComplete="current-password"
+          onChange={e => setForm(f => ({ ...f, senha_usuario: e.target.value }))}/>
+        <Button type="submit" loading={loading} className="w-full mt-2">Entrar</Button>
       </form>
-      <p className="mt-5 text-center text-sm text-zinc-400">
+      <p className="mt-6 text-center text-sm text-zinc-500">
         Não tem conta?{' '}
-        <Link to="/cadastro" className="text-checkpoint-green font-semibold hover:underline">Criar conta</Link>
+        <Link to="/cadastro" className="font-bold text-checkpoint-green hover:underline">Criar conta grátis</Link>
       </p>
-      <div className="mt-4 rounded-xl border border-zinc-800 p-4 text-xs text-zinc-500">
-        <p className="font-bold mb-1">Contas de teste:</p>
-        <p>admin / admin123 · gamer_br / senha123</p>
-      </div>
-    </AuthBox>
+    </AuthLayout>
   );
 }
 
+// ── Cadastro ──────────────────────────────────────────────
 export function Register() {
-  const { register } = useAuth();
-  const { toast }    = useToast();
-  const navigate     = useNavigate();
-  const [form, setForm]   = useState({ nm_usuario: '', email_usuario: '', senha_usuario: '' });
+  const { register, isAuthenticated } = useAuth();
+  const { toast }   = useToast();
+  const navigate    = useNavigate();
+  const [form, setForm]     = useState({ nm_usuario: '', email_usuario: '', senha_usuario: '', confirmar: '' });
   const [loading, setLoading] = useState(false);
 
-  async function submit(e: FormEvent) {
+  useEffect(() => { if (isAuthenticated) navigate('/feed'); }, [isAuthenticated, navigate]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.nm_usuario || !form.email_usuario || !form.senha_usuario) return toast('Preencha todos os campos.', 'error');
+    if (form.senha_usuario !== form.confirmar) return toast('As senhas não coincidem.', 'error');
+    if (form.senha_usuario.length < 6) return toast('Senha precisa de pelo menos 6 caracteres.', 'error');
+
     setLoading(true);
     try {
-      const msg = await register(form);
-      toast(msg);
-      navigate('/login', { state: { message: msg } });
+      const msg = await register({
+        nm_usuario:    form.nm_usuario.toLowerCase().trim(),
+        email_usuario: form.email_usuario.toLowerCase().trim(),
+        senha_usuario: form.senha_usuario,
+      });
+      // Redireciona para login com mensagem — O toast será exibido LÁ (único lugar)
+      navigate('/login', { state: { message: msg || 'Conta criada! Faça login para continuar.' } });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Erro ao cadastrar.';
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Erro ao criar conta.';
       toast(msg, 'error');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   return (
-    <AuthBox title="Criar conta" subtitle="Após criar a conta, faça login para continuar.">
-      <form onSubmit={submit} className="space-y-4">
-        <Input label="Usuário" value={form.nm_usuario} onChange={e => setForm({ ...form, nm_usuario: e.target.value.replace(/\s/g, '') })} minLength={3} required />
-        <Input label="E-mail" type="email" value={form.email_usuario} onChange={e => setForm({ ...form, email_usuario: e.target.value })} required />
-        <Input label="Senha" type="password" value={form.senha_usuario} onChange={e => setForm({ ...form, senha_usuario: e.target.value })} minLength={6} required />
-        <Button loading={loading} className="w-full">Criar conta</Button>
+    <AuthLayout title="Criar conta" subtitle="Junte-se à comunidade Checkpoint.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Nome de usuário" value={form.nm_usuario} autoComplete="username"
+          onChange={e => setForm(f => ({ ...f, nm_usuario: e.target.value }))} placeholder="seu_usuario"/>
+        <Input label="E-mail" type="email" value={form.email_usuario} autoComplete="email"
+          onChange={e => setForm(f => ({ ...f, email_usuario: e.target.value }))} placeholder="seu@email.com"/>
+        <PasswordInput label="Senha" value={form.senha_usuario} autoComplete="new-password"
+          onChange={e => setForm(f => ({ ...f, senha_usuario: e.target.value }))}/>
+        <PasswordInput label="Confirmar senha" value={form.confirmar} autoComplete="new-password"
+          onChange={e => setForm(f => ({ ...f, confirmar: e.target.value }))}/>
+        <Button type="submit" loading={loading} className="w-full mt-2">Criar conta</Button>
       </form>
-      <p className="mt-5 text-center text-sm text-zinc-400">
+      <p className="mt-6 text-center text-sm text-zinc-500">
         Já tem conta?{' '}
-        <Link to="/login" className="text-checkpoint-green font-semibold hover:underline">Entrar</Link>
+        <Link to="/login" className="font-bold text-checkpoint-green hover:underline">Entrar</Link>
       </p>
-    </AuthBox>
+    </AuthLayout>
+  );
+}
+
+// ── Layout compartilhado ──────────────────────────────────
+function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center">
+      <div className="card w-full max-w-md rounded-3xl p-8">
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <Link to="/" className="grid h-14 w-14 place-items-center rounded-2xl bg-checkpoint-green text-black">
+            <Gamepad2 size={28}/>
+          </Link>
+          <h1 className="text-2xl font-black">{title}</h1>
+          <p className="text-sm text-zinc-400">{subtitle}</p>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }

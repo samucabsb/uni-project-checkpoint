@@ -173,11 +173,17 @@ function TrendingSection() {
 // ── Feed principal ────────────────────────────────────────
 export default function Feed() {
   const { isAuthenticated } = useAuth();
-  const [tab, setTab] = useState<'following'|'discover'|'trending'>(isAuthenticated ? 'following' : 'discover');
+  const [tab, setTab] = useState<'mine'|'following'|'discover'|'trending'>(isAuthenticated ? 'following' : 'discover');
 
   const following = useQuery<Atividade[]>({
     queryKey: ['feed','following'],
     queryFn:  () => api.get('/feed/following').then(r => r.data),
+    enabled:  isAuthenticated,
+  });
+
+  const mine = useQuery<Atividade[]>({
+    queryKey: ['feed','mine'],
+    queryFn:  () => api.get('/feed/me').then(r => r.data),
     enabled:  isAuthenticated,
   });
 
@@ -194,10 +200,16 @@ export default function Feed() {
       {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
         {isAuthenticated && (
-          <button onClick={() => setTab('following')}
-            className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${tab==='following'?'bg-checkpoint-green text-black':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
-            Seguindo
-          </button>
+          <>
+            <button onClick={() => setTab('mine')}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${tab==='mine'?'bg-checkpoint-green text-black':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
+              Minhas atividades
+            </button>
+            <button onClick={() => setTab('following')}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${tab==='following'?'bg-checkpoint-green text-black':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
+              Seguindo
+            </button>
+          </>
         )}
         <button onClick={() => setTab('discover')}
           className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${tab==='discover'?'bg-checkpoint-green text-black':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
@@ -208,6 +220,23 @@ export default function Feed() {
           <TrendingUp size={14}/> Em alta
         </button>
       </div>
+
+      {/* Minhas atividades */}
+      {tab === 'mine' && (
+        <>
+          {mine.isLoading ? (
+            <div className="space-y-3">{[1,2,3].map(i=><Skeleton key={i} className="h-20 rounded-2xl"/>)}</div>
+          ) : !mine.data?.length ? (
+            <EmptyState title="Nenhuma atividade ainda"
+              description="Suas ações aparecem aqui: avaliações, favoritos, listas criadas e mais."
+              action={<button onClick={() => setTab('discover')} className="rounded-xl bg-checkpoint-green px-5 py-2.5 text-sm font-bold text-black">Explorar</button>}/>
+          ) : (
+            <div className="space-y-3">
+              {mine.data.map(a => <ActivityCard key={a.id_atividade} a={a}/>)}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Timeline de atividades (seguindo) */}
       {tab === 'following' && (

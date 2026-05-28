@@ -53,6 +53,36 @@ export function TextArea({ label, className='', ...props }: TextareaHTMLAttribut
   );
 }
 
+
+// ── PasswordInput — campo de senha com toggle show/hide ──
+export function PasswordInput({ label, className = '', ...props }: InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <label className="block">
+      {label && <span className="mb-2 block text-sm text-zinc-300">{label}</span>}
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          className={`w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 pr-11 outline-none focus:border-checkpoint-green transition-colors ${className}`}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200 transition-colors"
+          aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
+        >
+          {show ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          )}
+        </button>
+      </div>
+    </label>
+  );
+}
+
 // ── Stars com meia estrela ─────────────────────────────────
 export function Stars({ value, onChange, size=18 }: { value: number; onChange?: (n: number) => void; size?: number }) {
   const [hover, setHover] = useState(-1);

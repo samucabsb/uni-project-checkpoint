@@ -26,6 +26,11 @@ export default function Profile() {
   const [editForm, setEditForm]     = useState({ bio_usuario: '', img_usuario: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [vitrineRemoving, setVitrineRemoving] = useState<number | null>(null);
+  const [vitrineModal, setVitrineModal] = useState(false);
+  const [vitrineSearch, setVitrineSearch] = useState('');
+  const [vitrineResults, setVitrineResults] = useState<{ id_jogo: number; nm_jogo: string; img_jogo: string }[]>([]);
+  const [vitrinePosition, setVitrinePosition] = useState(1);
+  const [vitrineAdding, setVitrineAdding] = useState(false);
 
   const profileKey = ['profile', id];
   const { data: perfil, isLoading } = useQuery<Usuario>({
@@ -84,6 +89,27 @@ export default function Profile() {
       toast('Removido da vitrine.');
     } catch { toast('Erro ao remover.', 'error'); }
     finally { setVitrineRemoving(null); }
+  }
+
+  async function searchGamesForVitrine(q: string) {
+    setVitrineSearch(q);
+    if (q.length < 2) { setVitrineResults([]); return; }
+    try {
+      const r = await api.get('/games/search', { params: { q } });
+      setVitrineResults(r.data);
+    } catch {}
+  }
+
+  async function addToVitrine(id_jogo: number) {
+    setVitrineAdding(true);
+    try {
+      await api.post('/users/vitrine', { id_jogo, top_position: vitrinePosition });
+      qc.invalidateQueries({ queryKey: profileKey });
+      setVitrineModal(false);
+      setVitrineSearch(''); setVitrineResults([]);
+      toast('Adicionado à vitrine!');
+    } catch { toast('Erro ao atualizar vitrine.', 'error'); }
+    finally { setVitrineAdding(false); }
   }
 
   if (isLoading) return (
@@ -148,9 +174,27 @@ export default function Profile() {
       </div>
 
       {/* ── Vitrine ───────────────────────────────────────── */}
-      {vitrine.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-xl font-black">Vitrine</h2>
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xl font-black">Vitrine</h2>
+          {isMe && vitrine.length < 4 && (
+            <button onClick={() => setVitrineModal(true)}
+              className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-bold hover:bg-zinc-700 transition flex items-center gap-1">
+              + Adicionar
+            </button>
+          )}
+        </div>
+        {vitrine.length === 0 && isMe ? (
+          <div className="card rounded-2xl p-8 text-center space-y-3">
+            <p className="font-black text-lg">Sua vitrine está vazia</p>
+            <p className="text-sm text-zinc-400">Escolha até 4 jogos para destacar no seu perfil, como o Letterboxd.</p>
+            <Button onClick={() => setVitrineModal(true)} className="mx-auto flex items-center gap-2">
+              + Montar Vitrine
+            </Button>
+          </div>
+        ) : vitrine.length === 0 ? (
+          <p className="text-zinc-500 text-sm">Este usuário ainda não montou a vitrine.</p>
+        ) : (
           <div className="grid grid-cols-4 gap-2 sm:gap-3">
             {vitrine.map(s => (
               <div key={s.id_jogo} className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-zinc-900">
@@ -178,8 +222,8 @@ export default function Profile() {
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ── Estatísticas ──────────────────────────────────── */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -307,6 +351,42 @@ export default function Profile() {
       )}
 
       {/* ── Tab: Diário ───────────────────────────────────── */}
+      {/* ── Modal: montar vitrine ────────────────────────── */}
+      <Modal open={vitrineModal} onClose={() => { setVitrineModal(false); setVitrineSearch(''); setVitrineResults([]); }} title="Montar Vitrine">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm text-zinc-300">Posição</label>
+            <div className="flex gap-2">
+              {[1,2,3,4].map(p => (
+                <button key={p} onClick={() => setVitrinePosition(p)}
+                  className={`flex-1 rounded-xl py-2 text-sm font-bold transition ${vitrinePosition === p ? 'bg-checkpoint-green text-black' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+            {vitrine.find(v => v.top_position === vitrinePosition) && (
+              <p className="mt-1 text-xs text-yellow-400">⚠ Esta posição já está ocupada. O jogo atual será substituído.</p>
+            )}
+          </div>
+          <Input value={vitrineSearch} onChange={e => searchGamesForVitrine(e.target.value)}
+            placeholder="Buscar jogo para adicionar…" autoFocus/>
+          {vitrineResults.length > 0 && (
+            <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-800 divide-y divide-zinc-800/50">
+              {vitrineResults.map(g => (
+                <button key={g.id_jogo} disabled={vitrineAdding}
+                  onClick={() => addToVitrine(g.id_jogo)}
+                  className="flex w-full items-center gap-3 p-3 hover:bg-zinc-800 transition text-left disabled:opacity-50">
+                  <img src={g.img_jogo} alt={g.nm_jogo}
+                    onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/36x48/18181f/00e187?text=?'; }}
+                    className="h-12 w-9 rounded object-cover flex-shrink-0"/>
+                  <span className="text-sm font-bold">{g.nm_jogo}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
       {tab === 'diario' && <DiarioPublico userId={Number(id)} isMe={isMe}/>}
 
       {/* ── Modal: editar perfil ──────────────────────────── */}
