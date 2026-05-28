@@ -1,11 +1,10 @@
 /**
- * Componentes UI — Checkpoint v1.5
- * Inclui: Button, Input, TextArea, Select, Stars (meia estrela),
- *         Avatar, Skeleton, Modal, EmptyState, Header, Section,
- *         GameCard, ReviewCard (com likes)
+ * Componentes UI — Checkpoint v1.6
+ * Melhorias: onError em imagens, mobile-friendly GameCard,
+ *            aria-labels, Modal com Esc, Stars refinadas
  */
 
-import { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, useState } from 'react';
+import { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Star, ThumbsUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,10 +17,9 @@ import { Jogo, Avaliacao, StatusJogo } from '../types';
 // ── Button ─────────────────────────────────────────────────
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  loading?: boolean;
+  variant?: Variant; loading?: boolean;
 }
-const variantClasses: Record<Variant, string> = {
+const VC: Record<Variant, string> = {
   primary:   'bg-checkpoint-green text-black hover:brightness-110',
   secondary: 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border border-zinc-700',
   danger:    'bg-red-500 text-white hover:bg-red-400',
@@ -29,99 +27,72 @@ const variantClasses: Record<Variant, string> = {
 };
 export function Button({ variant='primary', loading=false, className='', children, ...props }: ButtonProps) {
   return (
-    <button
-      disabled={loading || props.disabled}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:opacity-60 ${variantClasses[variant]} ${className}`}
-      {...props}
-    >
-      {loading ? (
-        <><span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Carregando...</>
-      ) : children}
+    <button disabled={loading || props.disabled}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:opacity-60 ${VC[variant]} ${className}`}
+      {...props}>
+      {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"/>Carregando…</> : children}
     </button>
   );
 }
 
-// ── Input ──────────────────────────────────────────────────
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> { label?: string; }
-export function Input({ label, className='', ...props }: InputProps) {
+export function Input({ label, className='', ...props }: InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
     <label className="block">
       {label && <span className="mb-2 block text-sm text-zinc-300">{label}</span>}
-      <input className={`w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors ${className}`} {...props} />
+      <input className={`w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors ${className}`} {...props}/>
     </label>
   );
 }
 
-// ── TextArea ───────────────────────────────────────────────
-interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> { label?: string; }
-export function TextArea({ label, className='', ...props }: TextAreaProps) {
+export function TextArea({ label, className='', ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
   return (
     <label className="block">
       {label && <span className="mb-2 block text-sm text-zinc-300">{label}</span>}
-      <textarea className={`min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors ${className}`} {...props} />
+      <textarea className={`min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors ${className}`} {...props}/>
     </label>
   );
 }
 
 // ── Stars com meia estrela ─────────────────────────────────
-// nota é escala 1-10 (1=0.5★, 10=5★)
-// display: divide por 2 para mostrar 0.5-5.0
-export function Stars({
-  value,      // 1-10 (interno)
-  onChange,   // se fornecido, torna interativo
-  size = 18,
-}: {
-  value:     number;
-  onChange?: (n: number) => void;
-  size?:     number;
-}) {
+export function Stars({ value, onChange, size=18 }: { value: number; onChange?: (n: number) => void; size?: number }) {
   const [hover, setHover] = useState(-1);
   const display = hover > 0 ? hover : value;
+  const stars = Number((display / 2).toFixed(1));
 
   return (
-    <div
-      className="flex gap-0.5"
-      onMouseLeave={() => setHover(-1)}
-      aria-label={`${(value / 2).toFixed(1)} estrelas`}
-    >
+    <div className="flex gap-0.5" onMouseLeave={() => setHover(-1)}
+      aria-label={`${stars} estrelas`} role={onChange ? 'radiogroup' : 'img'}>
       {[1, 2, 3, 4, 5].map(star => {
-        const halfVal = star * 2 - 1;  // 1,3,5,7,9
-        const fullVal = star * 2;       // 2,4,6,8,10
+        const halfVal = star * 2 - 1;
+        const fullVal = star * 2;
         const filled  = display >= fullVal;
         const half    = !filled && display >= halfVal;
 
         return (
-          <span key={star} className="relative" style={{ width: size, height: size }}>
-            {/* Ícone base */}
-            <Star
-              size={size}
-              className="text-checkpoint-green"
-              fill={filled ? 'currentColor' : 'none'}
-              style={half ? { clipPath: 'inset(0 50% 0 0)', position: 'absolute', fill: 'currentColor' } : undefined}
-            />
-            {half && (
-              <Star size={size} className="text-checkpoint-green absolute inset-0" fill="none" />
+          <span key={star} className="relative inline-block" style={{ width: size, height: size }}>
+            {/* Ícone visual */}
+            {filled ? (
+              <Star size={size} className="text-checkpoint-green" fill="currentColor" />
+            ) : half ? (
+              <>
+                <Star size={size} className="text-checkpoint-green" fill="none" />
+                <Star size={size} className="text-checkpoint-green absolute inset-0"
+                  fill="currentColor" style={{ clipPath: 'inset(0 50% 0 0)' }} />
+              </>
+            ) : (
+              <Star size={size} className="text-zinc-700" fill="none" />
             )}
 
-            {/* Zona clicável — metade esquerda (meia estrela) */}
+            {/* Zonas clicáveis */}
             {onChange && (
-              <button
-                type="button"
-                aria-label={`${halfVal / 2} estrelas`}
-                onMouseEnter={() => setHover(halfVal)}
-                onClick={() => onChange(halfVal)}
-                className="absolute left-0 top-0 h-full w-1/2 cursor-pointer"
-              />
-            )}
-            {/* Zona clicável — metade direita (estrela cheia) */}
-            {onChange && (
-              <button
-                type="button"
-                aria-label={`${fullVal / 2} estrelas`}
-                onMouseEnter={() => setHover(fullVal)}
-                onClick={() => onChange(fullVal)}
-                className="absolute right-0 top-0 h-full w-1/2 cursor-pointer"
-              />
+              <>
+                <button type="button" aria-label={`${halfVal/2} estrelas`}
+                  onMouseEnter={() => setHover(halfVal)} onClick={() => onChange(halfVal)}
+                  className="absolute left-0 top-0 h-full w-1/2 cursor-pointer" />
+                <button type="button" aria-label={`${fullVal/2} estrelas`}
+                  onMouseEnter={() => setHover(fullVal)} onClick={() => onChange(fullVal)}
+                  className="absolute right-0 top-0 h-full w-1/2 cursor-pointer" />
+              </>
             )}
           </span>
         );
@@ -135,35 +106,43 @@ export function Avatar({ src, name, size='md' }: { src?: string | null; name?: s
   const sizes   = { sm: 'h-8 w-8', md: 'h-11 w-11', lg: 'h-24 w-24' };
   const fallback = `https://api.dicebear.com/8.x/adventurer/svg?seed=${encodeURIComponent(name || 'user')}`;
   return (
-    <img
-      src={src || fallback}
-      onError={e => { (e.target as HTMLImageElement).src = fallback; }}
+    <img src={src || fallback} onError={e => { (e.target as HTMLImageElement).src = fallback; }}
       className={`${sizes[size]} flex-shrink-0 rounded-full bg-zinc-800 object-cover ring-1 ring-white/10`}
-      alt={name ? `Avatar de ${name}` : 'Avatar'}
-      loading="lazy"
-    />
+      alt={name ? `Avatar de ${name}` : 'Avatar'} loading="lazy"/>
   );
+}
+
+// Placeholder para imagem de jogo quebrada
+function gameImgFallback(nm_jogo: string) {
+  return `https://placehold.co/300x400/18181f/00e187?text=${encodeURIComponent(nm_jogo.slice(0, 12))}`;
 }
 
 // ── Skeleton ───────────────────────────────────────────────
 export function Skeleton({ className='' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-zinc-800 ${className}`} />;
+  return <div className={`animate-pulse rounded-xl bg-zinc-800 ${className}`}/>;
 }
 export function GameCardSkeleton() {
   return (
     <div className="card rounded-2xl overflow-hidden">
-      <Skeleton className="aspect-[3/4] w-full rounded-none" />
-      <div className="p-3 space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div>
+      <Skeleton className="aspect-[3/4] rounded-none" />
+      <div className="p-3 space-y-2"><Skeleton className="h-4 w-3/4"/><Skeleton className="h-3 w-1/2"/></div>
     </div>
   );
 }
 
-// ── Modal ──────────────────────────────────────────────────
+// ── Modal com Esc ─────────────────────────────────────────
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: ()=>void; title?: string; children: ReactNode }) {
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}/>
       <div className="relative surface w-full max-w-md rounded-3xl shadow-2xl">
         {title && (
           <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
@@ -177,7 +156,6 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
   );
 }
 
-// ── EmptyState ─────────────────────────────────────────────
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="card rounded-3xl p-10 text-center">
@@ -198,16 +176,17 @@ export function Header({ title, text }: { title: string; text?: string }) {
   );
 }
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, children, animate = true }: { title: string; children: ReactNode; animate?: boolean }) {
   return (
-    <section className="reveal">
+    <section className={animate ? 'reveal' : ''}>
       <h2 className="mb-5 text-3xl font-black">{title}</h2>
       {children}
     </section>
   );
 }
 
-// ── GameCard ───────────────────────────────────────────────
+// ── GameCard — mobile-friendly ────────────────────────────
+// Link sempre visível embaixo; ações rápidas no hover/focus para desktop
 export function GameCard({ game }: { game: Jogo }) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -227,30 +206,27 @@ export function GameCard({ game }: { game: Jogo }) {
   async function handleFavorito() {
     if (!isAuthenticated) return toast('Faça login para favoritar.', 'info');
     try {
-      if (item?.favorito) {
-        await api.delete(`/library/games/${game.id_jogo}/favorite`);
-        toast('Favorito removido.');
-      } else {
-        await api.post(`/library/games/${game.id_jogo}/favorite`);
-        toast('Jogo favoritado!');
-      }
+      if (item?.favorito) { await api.delete(`/library/games/${game.id_jogo}/favorite`); toast('Favorito removido.'); }
+      else                { await api.post(`/library/games/${game.id_jogo}/favorite`);   toast('Favoritado!'); }
       qc.invalidateQueries({ queryKey: ['library'] });
-    } catch { toast('Erro ao atualizar favorito.', 'error'); }
+    } catch { toast('Erro ao atualizar.', 'error'); }
   }
 
   return (
     <div className="group card card-hover relative overflow-hidden rounded-2xl">
       {item?.favorito && (
         <span className="pop absolute right-3 top-3 z-10 rounded-full bg-checkpoint-green p-1.5 text-black shadow-lg">
-          <Heart size={12} fill="currentColor" />
+          <Heart size={12} fill="currentColor" aria-hidden="true"/>
         </span>
       )}
 
       <div className="relative aspect-[3/4] overflow-hidden bg-zinc-950">
-        <img src={game.img_jogo} alt={game.nm_jogo} loading="lazy"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <img src={game.img_jogo} alt={`Capa de ${game.nm_jogo}`} loading="lazy"
+          onError={e => { (e.target as HTMLImageElement).src = gameImgFallback(game.nm_jogo); }}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
 
-        <div className="absolute inset-0 flex flex-col justify-end gap-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 opacity-0 transition group-hover:opacity-100">
+        {/* Overlay — hover desktop */}
+        <div className="absolute inset-0 flex flex-col justify-end gap-1.5 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <p className="text-xs font-bold text-checkpoint-green">★ {game.media || '—'}</p>
           <Link to={`/jogos/${game.id_jogo}`}
             className="rounded-xl bg-checkpoint-green px-3 py-2 text-center text-xs font-bold text-black">
@@ -260,28 +236,33 @@ export function GameCard({ game }: { game: Jogo }) {
             className="rounded-xl bg-zinc-800/90 px-3 py-2 text-xs font-bold hover:bg-zinc-700 transition">
             Quero jogar
           </button>
-          <button onClick={handleFavorito}
+          <button onClick={handleFavorito} aria-label={item?.favorito ? 'Remover favorito' : 'Favoritar'}
             className={`flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition ${item?.favorito ? 'bg-checkpoint-green text-black' : 'bg-zinc-800/90 hover:bg-zinc-700'}`}>
-            <Heart size={12} fill={item?.favorito ? 'currentColor' : 'none'} />
+            <Heart size={12} fill={item?.favorito ? 'currentColor' : 'none'}/>
             {item?.favorito ? 'Favoritado' : 'Favoritar'}
           </button>
         </div>
       </div>
 
-      <Link to={`/jogos/${game.id_jogo}`} className="block p-3 hover:bg-zinc-800/30 transition">
+      {/* Info sempre visível — funciona no mobile sem hover */}
+      <Link to={`/jogos/${game.id_jogo}`} className="block p-3 hover:bg-zinc-800/30 transition-colors">
         <h3 className="line-clamp-2 text-sm font-black leading-snug">{game.nm_jogo}</h3>
-        {game.genero && <p className="mt-0.5 text-xs text-zinc-400">{game.genero}</p>}
+        <div className="mt-0.5 flex items-center justify-between">
+          {game.genero && <p className="text-xs text-zinc-400 truncate">{game.genero}</p>}
+          {game.media && <p className="text-xs font-bold text-checkpoint-green flex-shrink-0">★ {game.media}</p>}
+        </div>
       </Link>
     </div>
   );
 }
 
-// ── ReviewCard com likes ───────────────────────────────────
-export function ReviewCard({ review, showLike = true }: { review: Avaliacao; showLike?: boolean }) {
+// ── ReviewCard ─────────────────────────────────────────────
+export function ReviewCard({ review, showLike=true, showGame=true }: {
+  review: Avaliacao; showLike?: boolean; showGame?: boolean;
+}) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const qc        = useQueryClient();
-  const [likes, setLikes] = useState(review.likes_count || 0);
+  const [likes, setLikes]   = useState(review.likes_count || 0);
   const [curtiu, setCurtiu] = useState(review.ja_curtiu || false);
   const isMine = user?.id_usuario === review.id_usuario;
 
@@ -291,12 +272,10 @@ export function ReviewCard({ review, showLike = true }: { review: Avaliacao; sho
     try {
       if (curtiu) {
         const r = await api.delete(`/reviews/${review.id_avaliacao}/like`);
-        setLikes(r.data.likes_count);
-        setCurtiu(false);
+        setLikes(r.data.likes_count); setCurtiu(false);
       } else {
         const r = await api.post(`/reviews/${review.id_avaliacao}/like`);
-        setLikes(r.data.likes_count);
-        setCurtiu(true);
+        setLikes(r.data.likes_count); setCurtiu(true);
       }
     } catch { toast('Erro ao curtir.', 'error'); }
   }
@@ -305,14 +284,13 @@ export function ReviewCard({ review, showLike = true }: { review: Avaliacao; sho
     <article className="card rounded-2xl p-5">
       <div className="mb-3 flex items-center gap-3">
         <Link to={`/usuarios/${review.usuario?.id_usuario}`} className="flex-shrink-0">
-          <Avatar src={review.usuario?.img_usuario} name={review.usuario?.nm_usuario} size="sm" />
+          <Avatar src={review.usuario?.img_usuario} name={review.usuario?.nm_usuario} size="sm"/>
         </Link>
         <div className="min-w-0">
-          <Link to={`/usuarios/${review.usuario?.id_usuario}`}
-            className="font-bold hover:text-checkpoint-green transition-colors">
+          <Link to={`/usuarios/${review.usuario?.id_usuario}`} className="font-bold hover:text-checkpoint-green transition-colors">
             @{review.usuario?.nm_usuario}
           </Link>
-          {review.jogo && (
+          {showGame && review.jogo && (
             <p className="truncate text-sm text-zinc-400">
               avaliou{' '}
               <Link to={`/jogos/${review.jogo.id_jogo}`} className="text-zinc-100 hover:text-checkpoint-green transition-colors">
@@ -321,31 +299,34 @@ export function ReviewCard({ review, showLike = true }: { review: Avaliacao; sho
             </p>
           )}
         </div>
+        {/* Link para página individual da review */}
+        <Link to={`/reviews/${review.id_avaliacao}`} className="ml-auto flex-shrink-0 text-xs text-zinc-600 hover:text-zinc-400 transition-colors" title="Ver avaliação completa">
+          #
+        </Link>
       </div>
 
-      <Stars value={review.nota} size={16} />
+      <Stars value={review.nota} size={16}/>
 
       {review.comentario && (
         <p className="mt-3 text-sm leading-relaxed text-zinc-300 line-clamp-3">{review.comentario}</p>
       )}
 
-      {showLike && (
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            onClick={toggleLike}
-            disabled={isMine}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
-              curtiu
-                ? 'bg-checkpoint-green/10 text-checkpoint-green'
-                : 'text-zinc-500 hover:text-zinc-300 disabled:cursor-default'
-            }`}
-            title={isMine ? 'Não pode curtir a própria avaliação' : curtiu ? 'Descurtir' : 'Curtir'}
-          >
-            <ThumbsUp size={12} fill={curtiu ? 'currentColor' : 'none'} />
+      <div className="mt-3 flex items-center gap-3">
+        {showLike && (
+          <button onClick={toggleLike} disabled={isMine}
+            aria-label={curtiu ? 'Descurtir avaliação' : 'Curtir avaliação'}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${curtiu ? 'bg-checkpoint-green/10 text-checkpoint-green' : 'text-zinc-500 hover:text-zinc-300 disabled:cursor-default'}`}>
+            <ThumbsUp size={12} fill={curtiu ? 'currentColor' : 'none'}/>
             {likes > 0 && <span>{likes}</span>}
           </button>
-        </div>
-      )}
+        )}
+        {(review.comments_count || 0) > 0 && (
+          <Link to={`/reviews/${review.id_avaliacao}`}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+            {review.comments_count} comentário{review.comments_count !== 1 ? 's' : ''}
+          </Link>
+        )}
+      </div>
     </article>
   );
 }

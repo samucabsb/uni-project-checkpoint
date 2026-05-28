@@ -1,81 +1,123 @@
 /**
- * Rotas de Avaliações — v1.5
- *
- * GET    /reviews           — listar recentes
- * POST   /reviews           — criar/editar (upsert); comentario opcional; nota 1-10
- * DELETE /reviews/:id       — excluir (dono ou admin)
- * POST   /reviews/:id/like  — curtir avaliação
- * DELETE /reviews/:id/like  — descurtir avaliação
+ * Rotas de Avaliações — v1.6
+ * Melhorias:
+ * - Fix N+1: likes verificados em uma única query
+ * - Comentários em reviews (POST/GET/DELETE)
+ * - Trending reviews por likes
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { sanitizeUser } from '../utils/helpers';
+import { logAtividade } from '../utils/activities';
 import { authMiddleware, optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId } from '../utils/validate';
 
 export const reviewsRouter = Router();
 
-// ── GET /reviews ──────────────────────────────────────────
+const includeAvaliacao = {
+  usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
+  jogo:    true,
+  _count:  { select: { likes: true, comentarios: true } },
+};
+
+// ── Helpers ───────────────────────────────────────────────
+
+/** Retorna Set com IDs de avaliações que o usuário curtiu — 1 query para N reviews */
+async function getLikedSet(meuId: number | undefined, ids: number[]): Promise<Set<number>> {
+  if (!meuId || ids.length === 0) return new Set();
+  const likes = await prisma.tAB_LIKE_REVIEW.findMany({
+    where: { id_usuario: meuId, id_avaliacao: { in: ids } },
+    select: { id_avaliacao: true },
+  });
+  return new Set(likes.map(l => l.id_avaliacao));
+}
+
+function enrichReview(r: Record<string, unknown>, likedSet: Set<number>) {
+  const count = (r._count as { likes: number; comentarios: number }) || { likes: 0, comentarios: 0 };
+  return {
+    ...r,
+    usuario:         r.usuario ? sanitizeUser(r.usuario as Record<string, unknown>) : null,
+    likes_count:     count.likes,
+    comments_count:  count.comentarios,
+    ja_curtiu:       likedSet.has(r.id_avaliacao as number),
+  };
+}
+
+// ── GET /reviews — recentes ───────────────────────────────
 reviewsRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const reviews = await prisma.tAB_AVALIACAO.findMany({
-      include: {
-        usuario: true,
-        jogo:    true,
-        _count:  { select: { likes: true } },
-      },
+      include: includeAvaliacao,
       orderBy: { created_at: 'desc' },
       take:    40,
     });
 
-    const meuId = req.usuario?.id_usuario;
+    const ids      = reviews.map(r => r.id_avaliacao);
+    const likedSet = await getLikedSet(req.usuario?.id_usuario, ids);
 
-    // Verifica se o usuário logado curtiu cada review
-    const comLikes = await Promise.all(
-      reviews.map(async r => {
-        const jaCurtiu = meuId
-          ? !!(await prisma.tAB_LIKE_REVIEW.findUnique({
-              where: {
-                id_usuario_id_avaliacao: { id_usuario: meuId, id_avaliacao: r.id_avaliacao },
-              },
-            }))
-          : false;
-
-        return {
-          ...r,
-          usuario:     r.usuario ? sanitizeUser(r.usuario as unknown as Record<string, unknown>) : null,
-          likes_count: r._count.likes,
-          ja_curtiu:   jaCurtiu,
-        };
-      }),
-    );
-
-    return res.json(comLikes);
+    return res.json(reviews.map(r => enrichReview(r as unknown as Record<string, unknown>, likedSet)));
   } catch (err) { next(err); }
 });
 
-// ── POST /reviews — criar ou editar ──────────────────────
+// ── GET /reviews/popular — mais curtidas ──────────────────
+reviewsRouter.get('/popular', optionalAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const periodo = String(req.query.periodo || 'semana');
+    const from    = periodo === 'semana' ? new Date(Date.now() - 7 * 864e5)
+                 : periodo === 'mes'     ? new Date(Date.now() - 30 * 864e5)
+                 : new Date(0);
+
+    const reviews = await prisma.tAB_AVALIACAO.findMany({
+      where:   { created_at: { gte: from } },
+      include: { ...includeAvaliacao },
+      orderBy: { likes: { _count: 'desc' } },
+      take:    20,
+    });
+
+    const ids      = reviews.map(r => r.id_avaliacao);
+    const likedSet = await getLikedSet(req.usuario?.id_usuario, ids);
+
+    return res.json(reviews.map(r => enrichReview(r as unknown as Record<string, unknown>, likedSet)));
+  } catch (err) { next(err); }
+});
+
+// ── GET /reviews/:id — review individual ─────────────────
+reviewsRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
+
+    const review = await prisma.tAB_AVALIACAO.findUnique({
+      where:   { id_avaliacao: id },
+      include: includeAvaliacao,
+    });
+
+    if (!review) return res.status(404).json({ message: 'Avaliação não encontrada.' });
+
+    const likedSet = await getLikedSet(req.usuario?.id_usuario, [id]);
+    return res.json(enrichReview(review as unknown as Record<string, unknown>, likedSet));
+  } catch (err) { next(err); }
+});
+
+// ── POST /reviews — criar ou atualizar ───────────────────
 reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const schema = z.object({
       id_jogo:     z.number().int().positive(),
-      nota:        z.number().int().min(1).max(10),  // 1=0.5★ a 10=5★
+      nota:        z.number().int().min(1).max(10),
       comentario:  z.string().max(1000).optional().nullable(),
-      data_jogada: z.string().optional().nullable(),
+      data_jogada: z.string().refine(v => !v || !isNaN(Date.parse(v)), 'Data inválida').optional().nullable(),
     });
 
     const dados = schema.parse(req.body);
 
-    // Verifica se o jogo existe antes do upsert
     const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: dados.id_jogo } });
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 
     const review = await prisma.tAB_AVALIACAO.upsert({
-      where: {
-        id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo },
-      },
+      where:  { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
       update: {
         nota:        dados.nota,
         comentario:  dados.comentario ?? null,
@@ -90,11 +132,18 @@ reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
       },
     });
 
+    await logAtividade({
+      id_usuario:  req.usuario!.id_usuario,
+      tipo:        'AVALIOU_JOGO',
+      id_jogo:     dados.id_jogo,
+      id_avaliacao: review.id_avaliacao,
+    });
+
     return res.status(201).json(review);
   } catch (err) { next(err); }
 });
 
-// ── DELETE /reviews/:id ────────────────────────────────────
+// ── DELETE /reviews/:id ───────────────────────────────────
 reviewsRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -112,7 +161,7 @@ reviewsRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res, next)
   } catch (err) { next(err); }
 });
 
-// ── POST /reviews/:id/like — curtir ───────────────────────
+// ── POST /reviews/:id/like — curtir ──────────────────────
 reviewsRouter.post('/:id/like', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -121,25 +170,28 @@ reviewsRouter.post('/:id/like', authMiddleware, async (req: AuthRequest, res, ne
     const review = await prisma.tAB_AVALIACAO.findUnique({ where: { id_avaliacao: id } });
     if (!review) return res.status(404).json({ message: 'Avaliação não encontrada.' });
 
-    // Não pode curtir a própria avaliação
     if (review.id_usuario === req.usuario!.id_usuario) {
       return res.status(400).json({ message: 'Você não pode curtir sua própria avaliação.' });
     }
 
     await prisma.tAB_LIKE_REVIEW.upsert({
-      where: {
-        id_usuario_id_avaliacao: { id_usuario: req.usuario!.id_usuario, id_avaliacao: id },
-      },
+      where:  { id_usuario_id_avaliacao: { id_usuario: req.usuario!.id_usuario, id_avaliacao: id } },
       update: {},
       create: { id_usuario: req.usuario!.id_usuario, id_avaliacao: id },
     });
 
+    await logAtividade({
+      id_usuario:  req.usuario!.id_usuario,
+      tipo:        'CURTIU_REVIEW',
+      id_avaliacao: id,
+    });
+
     const total = await prisma.tAB_LIKE_REVIEW.count({ where: { id_avaliacao: id } });
-    return res.status(201).json({ message: 'Curtida registrada.', likes_count: total });
+    return res.status(201).json({ likes_count: total });
   } catch (err) { next(err); }
 });
 
-// ── DELETE /reviews/:id/like — descurtir ──────────────────
+// ── DELETE /reviews/:id/like — descurtir ─────────────────
 reviewsRouter.delete('/:id/like', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -150,6 +202,61 @@ reviewsRouter.delete('/:id/like', authMiddleware, async (req: AuthRequest, res, 
     });
 
     const total = await prisma.tAB_LIKE_REVIEW.count({ where: { id_avaliacao: id } });
-    return res.json({ message: 'Curtida removida.', likes_count: total });
+    return res.json({ likes_count: total });
+  } catch (err) { next(err); }
+});
+
+// ── GET /reviews/:id/comments ─────────────────────────────
+reviewsRouter.get('/:id/comments', async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
+
+    const comentarios = await prisma.tAB_COMENTARIO_REVIEW.findMany({
+      where:   { id_avaliacao: id },
+      include: { usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } } },
+      orderBy: { created_at: 'asc' },
+    });
+
+    return res.json(comentarios);
+  } catch (err) { next(err); }
+});
+
+// ── POST /reviews/:id/comments — comentar ────────────────
+reviewsRouter.post('/:id/comments', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
+
+    const schema = z.object({ texto: z.string().min(1).max(500) });
+    const { texto } = schema.parse(req.body);
+
+    const review = await prisma.tAB_AVALIACAO.findUnique({ where: { id_avaliacao: id } });
+    if (!review) return res.status(404).json({ message: 'Avaliação não encontrada.' });
+
+    const comentario = await prisma.tAB_COMENTARIO_REVIEW.create({
+      data:    { id_usuario: req.usuario!.id_usuario, id_avaliacao: id, texto },
+      include: { usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } } },
+    });
+
+    return res.status(201).json(comentario);
+  } catch (err) { next(err); }
+});
+
+// ── DELETE /reviews/comments/:id ─────────────────────────
+reviewsRouter.delete('/comments/:id', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const id = parseId(req.params.id, res);
+    if (id === null) return;
+
+    const comentario = await prisma.tAB_COMENTARIO_REVIEW.findUnique({ where: { id_comentario: id } });
+    if (!comentario) return res.status(404).json({ message: 'Comentário não encontrado.' });
+
+    const ehDono  = comentario.id_usuario === req.usuario!.id_usuario;
+    const ehAdmin = req.usuario!.tipo_usuario === 'ADMIN';
+    if (!ehDono && !ehAdmin) return res.status(403).json({ message: 'Sem permissão.' });
+
+    await prisma.tAB_COMENTARIO_REVIEW.delete({ where: { id_comentario: id } });
+    return res.json({ message: 'Comentário excluído.' });
   } catch (err) { next(err); }
 });

@@ -1,11 +1,13 @@
 // ============================================================
-// Checkpoint v1.5 — Schema Prisma
-// Banco: SQLite (dev/acadêmico) → trocar provider para
-//        postgresql para produção real
+// Checkpoint v1.6 — Schema Prisma (SQLite)
+// NOTA: SQLite não suporta enums no Prisma.
+// Os campos usam String com valores restritos via Zod nas rotas.
+// Valores válidos documentados nos comentários abaixo.
 // ============================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -14,6 +16,7 @@ datasource db {
 }
 
 // ── Usuário ───────────────────────────────────────────────
+// tipo_usuario: "USER" | "ADMIN"
 model TAB_USUARIO {
   id_usuario    Int      @id @default(autoincrement())
   nm_usuario    String   @unique
@@ -21,25 +24,30 @@ model TAB_USUARIO {
   senha_usuario String
   bio_usuario   String?
   img_usuario   String?
-  tipo_usuario  String   @default("USER")   // "USER" | "ADMIN"
+  tipo_usuario  String   @default("USER")
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  // Relações
-  avaliacoes   TAB_AVALIACAO[]
-  listas       TAB_LISTA[]
-  status_jogos TAB_STATUS_JOGO[]
-  seguidores   TAB_FOLLOW[]     @relation("seguidos")
-  seguindo     TAB_FOLLOW[]     @relation("seguidores")
-  likes_dados  TAB_LIKE_REVIEW[]
+  avaliacoes      TAB_AVALIACAO[]
+  listas          TAB_LISTA[]
+  status_jogos    TAB_STATUS_JOGO[]
+  seguidores      TAB_FOLLOW[]           @relation("seguidos")
+  seguindo        TAB_FOLLOW[]           @relation("seguidores")
+  likes_reviews   TAB_LIKE_REVIEW[]
+  likes_listas    TAB_LIKE_LISTA[]
+  comentarios     TAB_COMENTARIO_REVIEW[]
+  atividades      TAB_ATIVIDADE[]        @relation("atividades_autor")
+  atividades_alvo TAB_ATIVIDADE[]        @relation("atividades_alvo")
+  diario          TAB_DIARIO_JOGO[]
 
+  @@index([nm_usuario])
   @@map("TAB_USUARIO")
 }
 
 // ── Jogo ──────────────────────────────────────────────────
 model TAB_JOGOS {
   id_jogo       Int      @id @default(autoincrement())
-  id_usuario    Int                              // admin criador
+  id_usuario    Int
   nm_jogo       String   @unique
   img_jogo      String
   genero        String?
@@ -50,49 +58,68 @@ model TAB_JOGOS {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  // Relações
   avaliacoes   TAB_AVALIACAO[]
   listas       TAB_LISTA_JOGO[]
   status_jogos TAB_STATUS_JOGO[]
+  atividades   TAB_ATIVIDADE[]
+  diario       TAB_DIARIO_JOGO[]
 
+  @@index([nm_jogo])
+  @@index([created_at])
   @@map("TAB_JOGOS")
 }
 
 // ── Avaliação ─────────────────────────────────────────────
-// nota: escala 1-10 (0.5 a 5 estrelas em incrementos de 0.5)
-//       1=0.5★, 2=1★, 3=1.5★, 4=2★, 5=2.5★, 6=3★, 7=3.5★, 8=4★, 9=4.5★, 10=5★
-// comentario: opcional (pode avaliar só com nota, como no Letterboxd)
+// nota: 1-10 (exibição = nota / 2, ex: 10 → 5 estrelas)
 model TAB_AVALIACAO {
-  id_avaliacao Int      @id @default(autoincrement())
+  id_avaliacao Int       @id @default(autoincrement())
   id_usuario   Int
   id_jogo      Int
-  nota         Int                              // 1-10 (meia estrela)
-  comentario   String?                          // v1.5: opcional
+  nota         Int
+  comentario   String?
   data_jogada  DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
-  // Relações
-  usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
-  jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
-  likes   TAB_LIKE_REVIEW[]
+  usuario     TAB_USUARIO            @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogo        TAB_JOGOS              @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
+  likes       TAB_LIKE_REVIEW[]
+  comentarios TAB_COMENTARIO_REVIEW[]
+  atividades  TAB_ATIVIDADE[]
 
   @@unique([id_usuario, id_jogo])
+  @@index([id_jogo, created_at])
+  @@index([created_at])
   @@map("TAB_AVALIACAO")
 }
 
-// ── Like em Avaliação (v1.5) ──────────────────────────────
+// ── Like em Avaliação ─────────────────────────────────────
 model TAB_LIKE_REVIEW {
-  id_like      Int      @id @default(autoincrement())
   id_usuario   Int
   id_avaliacao Int
   created_at   DateTime @default(now())
 
-  usuario  TAB_USUARIO   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  usuario   TAB_USUARIO   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   avaliacao TAB_AVALIACAO @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: Cascade)
 
-  @@unique([id_usuario, id_avaliacao])
+  @@id([id_usuario, id_avaliacao])
   @@map("TAB_LIKE_REVIEW")
+}
+
+// ── Comentário em Avaliação ───────────────────────────────
+model TAB_COMENTARIO_REVIEW {
+  id_comentario Int      @id @default(autoincrement())
+  id_usuario    Int
+  id_avaliacao  Int
+  texto         String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  usuario   TAB_USUARIO   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  avaliacao TAB_AVALIACAO @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: Cascade)
+
+  @@index([id_avaliacao])
+  @@map("TAB_COMENTARIO_REVIEW")
 }
 
 // ── Lista de Jogos ────────────────────────────────────────
@@ -105,16 +132,21 @@ model TAB_LISTA {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  usuario TAB_USUARIO    @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
-  jogos   TAB_LISTA_JOGO[]
+  usuario    TAB_USUARIO      @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogos      TAB_LISTA_JOGO[]
+  likes      TAB_LIKE_LISTA[]
+  atividades TAB_ATIVIDADE[]
 
+  @@index([id_usuario])
+  @@index([created_at])
   @@map("TAB_LISTA")
 }
 
-// ── Relação Lista ↔ Jogo ──────────────────────────────────
+// ── Relação Lista ↔ Jogo (com ordenação manual) ───────────
 model TAB_LISTA_JOGO {
   id_lista Int
   id_jogo  Int
+  position Int?
 
   lista TAB_LISTA @relation(fields: [id_lista], references: [id_lista], onDelete: Cascade)
   jogo  TAB_JOGOS @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
@@ -123,7 +155,20 @@ model TAB_LISTA_JOGO {
   @@map("TAB_LISTA_JOGO")
 }
 
-// ── Seguimento entre usuários ─────────────────────────────
+// ── Like em Lista ─────────────────────────────────────────
+model TAB_LIKE_LISTA {
+  id_usuario Int
+  id_lista   Int
+  created_at DateTime @default(now())
+
+  usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  lista   TAB_LISTA   @relation(fields: [id_lista], references: [id_lista], onDelete: Cascade)
+
+  @@id([id_usuario, id_lista])
+  @@map("TAB_LIKE_LISTA")
+}
+
+// ── Seguimento ────────────────────────────────────────────
 model TAB_FOLLOW {
   id_usuario_seguidor Int
   id_usuario_seguido  Int
@@ -133,16 +178,17 @@ model TAB_FOLLOW {
   seguido  TAB_USUARIO @relation("seguidos",   fields: [id_usuario_seguido],  references: [id_usuario], onDelete: Cascade)
 
   @@id([id_usuario_seguidor, id_usuario_seguido])
+  @@index([id_usuario_seguido])
   @@map("TAB_FOLLOW")
 }
 
 // ── Status de jogo na biblioteca ──────────────────────────
-// top_position: 1-4 → posição na Vitrine; null → não está na Vitrine
+// status: "QUERO_JOGAR" | "JOGANDO" | "ZERADO" | "ABANDONADO"
 model TAB_STATUS_JOGO {
   id_status    Int      @id @default(autoincrement())
   id_usuario   Int
   id_jogo      Int
-  status       String   @default("QUERO_JOGAR") // QUERO_JOGAR|JOGANDO|ZERADO|ABANDONADO
+  status       String   @default("QUERO_JOGAR")
   favorito     Boolean  @default(false)
   top_position Int?
   created_at   DateTime @default(now())
@@ -152,5 +198,50 @@ model TAB_STATUS_JOGO {
   jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
 
   @@unique([id_usuario, id_jogo])
+  @@index([id_usuario])
   @@map("TAB_STATUS_JOGO")
+}
+
+// ── Feed de Atividades ────────────────────────────────────
+// tipo: "AVALIOU_JOGO" | "CURTIU_REVIEW" | "CRIOU_LISTA" |
+//       "ADICIONOU_JOGO_LISTA" | "FAVORITOU_JOGO" |
+//       "MUDOU_STATUS" | "SEGUIU_USUARIO" | "CURTIU_LISTA"
+model TAB_ATIVIDADE {
+  id_atividade    Int      @id @default(autoincrement())
+  id_usuario      Int
+  tipo            String
+  id_jogo         Int?
+  id_avaliacao    Int?
+  id_lista        Int?
+  id_usuario_alvo Int?
+  dados_extras    String?
+  created_at      DateTime @default(now())
+
+  usuario      TAB_USUARIO    @relation("atividades_autor", fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  usuario_alvo TAB_USUARIO?   @relation("atividades_alvo",  fields: [id_usuario_alvo], references: [id_usuario], onDelete: SetNull)
+  jogo         TAB_JOGOS?     @relation(fields: [id_jogo],      references: [id_jogo],      onDelete: SetNull)
+  avaliacao    TAB_AVALIACAO? @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: SetNull)
+  lista        TAB_LISTA?     @relation(fields: [id_lista],     references: [id_lista],     onDelete: SetNull)
+
+  @@index([id_usuario, created_at])
+  @@index([created_at])
+  @@map("TAB_ATIVIDADE")
+}
+
+// ── Diário de Jogos ───────────────────────────────────────
+model TAB_DIARIO_JOGO {
+  id_diario   Int      @id @default(autoincrement())
+  id_usuario  Int
+  id_jogo     Int
+  data_jogada DateTime
+  nota        Int?
+  comentario  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  usuario TAB_USUARIO @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  jogo    TAB_JOGOS   @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
+
+  @@index([id_usuario, data_jogada])
+  @@map("TAB_DIARIO_JOGO")
 }

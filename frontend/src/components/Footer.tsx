@@ -31,12 +31,13 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>UNIEURO — Projeto Integrador</li>
               <li>Samuel · Vinícius · Ana Júlia</li>
+              <li>Prof. Jorge Osvaldo A. L. Torres</li>
             </ul>
           </div>
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-900 pt-6">
           <p className="text-xs text-zinc-600">© {year} Checkpoint · Projeto Integrador UNIEURO</p>
-          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold text-zinc-600">v1.5.0</span>
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold text-zinc-600">v1.6.0</span>
         </div>
       </div>
     </footer>

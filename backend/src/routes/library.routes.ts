@@ -1,17 +1,19 @@
 /**
- * Rotas da Biblioteca — v1.5
- * Favoritos e Vitrine são independentes
+ * Rotas da Biblioteca — v1.6
+ * Status, favoritos, vitrine + atividades sociais
  */
 
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { calcMedia } from '../utils/helpers';
+import { logAtividade } from '../utils/activities';
 import { authMiddleware, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId } from '../utils/validate';
 
 export const libraryRouter = Router();
 
+// ── GET /library ──────────────────────────────────────────
 libraryRouter.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const status = String(req.query.status || 'TODOS');
@@ -31,6 +33,7 @@ libraryRouter.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ── POST /library/games/:id/status ────────────────────────
 libraryRouter.post('/games/:id/status', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id_jogo = parseId(req.params.id, res);
@@ -51,10 +54,22 @@ libraryRouter.post('/games/:id/status', authMiddleware, async (req: AuthRequest,
       update: dados,
       create: { id_usuario: req.usuario!.id_usuario, id_jogo, status: dados.status || 'QUERO_JOGAR', favorito: dados.favorito ?? false },
     });
+
+    // Registrar atividade de mudança de status
+    if (dados.status) {
+      await logAtividade({
+        id_usuario:  req.usuario!.id_usuario,
+        tipo:        'MUDOU_STATUS',
+        id_jogo,
+        dados_extras: dados.status,
+      });
+    }
+
     return res.json(item);
   } catch (err) { next(err); }
 });
 
+// ── POST /library/games/:id/favorite ─────────────────────
 libraryRouter.post('/games/:id/favorite', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id_jogo = parseId(req.params.id, res);
@@ -68,10 +83,14 @@ libraryRouter.post('/games/:id/favorite', authMiddleware, async (req: AuthReques
       update: { favorito: true },
       create: { id_usuario: req.usuario!.id_usuario, id_jogo, favorito: true, status: 'QUERO_JOGAR' },
     });
+
+    await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'FAVORITOU_JOGO', id_jogo });
+
     return res.json(item);
   } catch (err) { next(err); }
 });
 
+// ── DELETE /library/games/:id/favorite ───────────────────
 libraryRouter.delete('/games/:id/favorite', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id_jogo = parseId(req.params.id, res);
@@ -85,6 +104,7 @@ libraryRouter.delete('/games/:id/favorite', authMiddleware, async (req: AuthRequ
   } catch (err) { next(err); }
 });
 
+// ── PUT /library/vitrine ──────────────────────────────────
 libraryRouter.put('/vitrine', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const schema = z.object({

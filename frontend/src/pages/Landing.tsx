@@ -1,96 +1,123 @@
+/**
+ * Landing — v1.6
+ * Animações reveal apenas em seções abaixo do fold.
+ * Hero, stats e CTA inicial sem reveal para garantir visibilidade.
+ */
+
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Gamepad2, Users, Star, TrendingUp, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { useReveal } from '../hooks';
-import { GameCard, ReviewCard, Section } from '../components/ui';
-import { DiscoverData } from '../types';
-
-function fmt(n: number) { return n.toLocaleString('pt-BR'); }
+import { GameCard, ReviewCard } from '../components/ui';
+import { DiscoverData, TrendingData } from '../types';
 
 export default function Landing() {
-  const { user } = useAuth();
   useReveal();
 
-  const { data: discover } = useQuery<DiscoverData>({ queryKey: ['landing'], queryFn: () => api.get('/feed/discover').then(r => r.data), staleTime: 60_000 });
-  const { data: stats }    = useQuery<{jogos:number;usuarios:number;avaliacoes:number}>({ queryKey: ['stats'], queryFn: () => api.get('/feed/stats').then(r => r.data), staleTime: 300_000 });
-
-  const jogos   = discover?.games   || [];
-  const reviews = discover?.reviews || [];
+  const { data: stats }    = useQuery({ queryKey: ['stats'],            queryFn: () => api.get('/feed/stats').then(r => r.data),                                        staleTime: 60_000 });
+  const { data: discover } = useQuery<DiscoverData>({ queryKey: ['feed','discover'], queryFn: () => api.get('/feed/discover').then(r => r.data),                        staleTime: 60_000 });
+  const { data: trending } = useQuery<TrendingData>({ queryKey: ['trending','semana'], queryFn: () => api.get('/feed/trending', { params: { periodo: 'semana' } }).then(r => r.data), staleTime: 60_000 });
 
   return (
     <div className="space-y-16">
-      <section className="reveal grid min-h-[60vh] items-center gap-10 rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-950 to-zinc-900 p-8 lg:p-12 lg:grid-cols-[1.1fr_.9fr]">
-        <div>
-          <span className="inline-block rounded-full bg-checkpoint-green/10 px-4 py-2 text-sm font-bold text-checkpoint-green">Gaming Network</span>
-          <h1 className="mt-5 max-w-2xl text-5xl font-black leading-tight tracking-tight lg:text-6xl">
-            {user ? `Bem‑vindo de volta, @${user.nm_usuario}` : 'Registre, avalie e descubra jogos com a comunidade.'}
-          </h1>
-          <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-400">
-            {user
-              ? 'Continue seu checkpoint: veja o feed, organize sua biblioteca ou descubra novos jogos.'
-              : 'Checkpoint é uma rede social para acompanhar sua vida gamer, criar listas, favoritar jogos e seguir outros jogadores.'}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {user ? (
-              <>
-                <Link to="/feed"><button className="rounded-xl bg-checkpoint-green px-6 py-3 text-sm font-bold text-black hover:brightness-110 transition">Ir para o Feed</button></Link>
-                <Link to="/biblioteca"><button className="rounded-xl border border-zinc-700 bg-zinc-800 px-6 py-3 text-sm font-bold hover:bg-zinc-700 transition">Minha Biblioteca</button></Link>
-              </>
-            ) : (
-              <>
-                <Link to="/cadastro"><button className="rounded-xl bg-checkpoint-green px-6 py-3 text-sm font-bold text-black hover:brightness-110 transition">Criar conta grátis</button></Link>
-                <Link to="/jogos"><button className="rounded-xl border border-zinc-700 bg-zinc-800 px-6 py-3 text-sm font-bold hover:bg-zinc-700 transition">Explorar catálogo</button></Link>
-              </>
-            )}
+      {/* ── Hero — SEM reveal (visível imediatamente) ────── */}
+      <section className="rounded-3xl overflow-hidden border border-zinc-900">
+        <div className="bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-8 sm:p-14 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-checkpoint-green/30 bg-checkpoint-green/10 px-4 py-1.5 text-sm font-bold text-checkpoint-green">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-checkpoint-green"/>
+            Sua rede social de jogos
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {jogos.slice(0,4).map(g => <GameCard key={g.id_jogo} game={g} />)}
+          <h1 className="text-5xl sm:text-7xl font-black leading-none tracking-tight">
+            Checkpoint<span className="text-checkpoint-green">.</span>
+          </h1>
+          <p className="mx-auto max-w-lg text-lg text-zinc-400">
+            Registre o que jogou, descubra o que jogar e conecte-se com outros gamers.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link to="/cadastro" className="rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
+              Criar conta gratuita
+            </Link>
+            <Link to="/jogos" className="rounded-xl bg-zinc-800 px-8 py-3.5 font-black hover:bg-zinc-700 transition border border-zinc-700">
+              Explorar jogos
+            </Link>
+          </div>
         </div>
       </section>
 
+      {/* ── Stats — SEM reveal ───────────────────────────── */}
       {stats && (
-        <section className="reveal grid grid-cols-3 gap-4 text-center">
+        <section className="grid grid-cols-3 gap-4">
           {[
-            { v: stats.jogos,       l: 'jogos no catálogo' },
-            { v: stats.usuarios,    l: 'membros'           },
-            { v: stats.avaliacoes,  l: 'avaliações'        },
-          ].map(({ v, l }) => (
-            <div key={l} className="surface rounded-2xl py-6 px-4">
-              <p className="text-3xl font-black text-checkpoint-green">{fmt(v)}</p>
-              <p className="mt-1 text-sm text-zinc-400">{l}</p>
+            { icon: <Gamepad2 className="text-checkpoint-green" size={22}/>, value: stats.jogos,      label: 'jogos cadastrados'      },
+            { icon: <Users    className="text-checkpoint-green" size={22}/>, value: stats.usuarios,   label: 'jogadores registrados'  },
+            { icon: <Star     className="text-checkpoint-green" size={22}/>, value: stats.avaliacoes, label: 'avaliações publicadas'  },
+          ].map(({ icon, value, label }) => (
+            <div key={label} className="card rounded-2xl p-5 text-center">
+              <div className="flex justify-center mb-2">{icon}</div>
+              <p className="text-3xl font-black">{value.toLocaleString('pt-BR')}</p>
+              <p className="mt-1 text-xs text-zinc-500">{label}</p>
             </div>
           ))}
         </section>
       )}
 
-      {!user && (
-        <Section title="Como funciona">
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-            {[
-              { n:'01', t:'Descubra jogos',    d:'Explore um catálogo curado com avaliações da comunidade.' },
-              { n:'02', t:'Avalie e registre', d:'Publique resenhas com meia estrela e organize por status.' },
-              { n:'03', t:'Crie listas',       d:'Monte coleções temáticas e compartilhe com jogadores.' },
-              { n:'04', t:'Siga jogadores',    d:'Acompanhe o feed de quem você segue em tempo real.' },
-            ].map(({ n, t, d }) => (
-              <div key={n} className="card rounded-2xl p-6">
-                <b className="text-2xl font-black text-checkpoint-green">{n}</b>
-                <h3 className="mt-4 text-base font-black">{t}</h3>
-                <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{d}</p>
-              </div>
-            ))}
+      {/* ── Em alta — com reveal (abaixo do fold) ────────── */}
+      {trending?.games && trending.games.length > 0 && (
+        <section className="reveal space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={20} className="text-checkpoint-green"/>
+              <h2 className="text-2xl font-black">Em alta esta semana</h2>
+            </div>
+            <Link to="/feed" className="flex items-center gap-1 text-sm text-zinc-500 hover:text-checkpoint-green transition-colors">
+              Ver tudo <ChevronRight size={14}/>
+            </Link>
           </div>
-        </Section>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {trending.games.slice(0, 6).map(g => <GameCard key={g.id_jogo} game={g}/>)}
+          </div>
+        </section>
       )}
 
-      {reviews.length > 0 && (
-        <Section title="Avaliações recentes">
-          <div className="grid gap-4 md:grid-cols-2">
-            {reviews.slice(0,4).map(r => <ReviewCard key={r.id_avaliacao} review={r} />)}
+      {/* ── Reviews populares ─────────────────────────────── */}
+      {trending?.reviews && trending.reviews.length > 0 && (
+        <section className="reveal space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black">Reviews populares</h2>
+            <Link to="/feed" className="flex items-center gap-1 text-sm text-zinc-500 hover:text-checkpoint-green transition-colors">
+              Ver feed <ChevronRight size={14}/>
+            </Link>
           </div>
-        </Section>
+          <div className="grid gap-4 md:grid-cols-2">
+            {trending.reviews.slice(0, 4).map(r => <ReviewCard key={r.id_avaliacao} review={r}/>)}
+          </div>
+        </section>
       )}
+
+      {/* ── Catálogo recente ──────────────────────────────── */}
+      {discover?.games && discover.games.length > 0 && (
+        <section className="reveal space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black">Catálogo</h2>
+            <Link to="/jogos" className="flex items-center gap-1 text-sm text-zinc-500 hover:text-checkpoint-green transition-colors">
+              Ver todos <ChevronRight size={14}/>
+            </Link>
+          </div>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+            {discover.games.slice(0, 8).map(g => <GameCard key={g.id_jogo} game={g}/>)}
+          </div>
+        </section>
+      )}
+
+      {/* ── CTA final ─────────────────────────────────────── */}
+      <section className="reveal card rounded-3xl p-8 sm:p-12 text-center space-y-4">
+        <h2 className="text-4xl font-black">Pronto para jogar?</h2>
+        <p className="text-zinc-400">Crie sua conta e comece a registrar sua jornada gamer hoje.</p>
+        <Link to="/cadastro" className="inline-block rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
+          Começar agora — é grátis
+        </Link>
+      </section>
     </div>
   );
 }

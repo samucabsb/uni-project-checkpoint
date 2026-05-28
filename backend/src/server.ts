@@ -52,7 +52,7 @@ app.use('/api', routes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {
-  console.log(`\n🎮 Checkpoint API v1.5`);
+  console.log(`\n🎮 Checkpoint API v1.6`);
   console.log(`   URL:    http://localhost:${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/api/health\n`);
 });

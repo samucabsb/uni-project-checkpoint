@@ -1,53 +1,87 @@
-import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+/**
+ * Hooks customizados — v1.6
+ * Fix crítico: useReveal usava classList.add('active') mas o CSS
+ * espera '.reveal.show'. Corrigido para 'show' + ativação imediata
+ * de elementos já visíveis no viewport.
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { StatusJogo } from '../types';
 
-export function useDebounce<T>(value: T, delay = 300): T {
+// ── useDebounce ────────────────────────────────────────────
+export function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
   }, [value, delay]);
   return debounced;
 }
 
-// Singleton guard: evita criar múltiplos observers se o hook for chamado por vários componentes
-let observerRegistered = false;
-
+// ── useReveal ──────────────────────────────────────────────
+// Ativa elementos .reveal → .reveal.show para animar entrada
+// CORREÇÃO: o CSS usa a classe 'show' (não 'active')
 export function useReveal() {
   useEffect(() => {
-    if (observerRegistered) return;
-    observerRegistered = true;
+    function activate(el: Element) {
+      el.classList.add('show');
+    }
 
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('show'); }),
-      { threshold: 0.12 },
+    function observeAll() {
+      document.querySelectorAll('.reveal:not(.show)').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        // Ativa imediatamente se já estiver visível no viewport
+        if (rect.top < window.innerHeight + 60 && rect.bottom > 0) {
+          activate(el);
+        } else {
+          io.observe(el);
+        }
+      });
+    }
+
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) { activate(e.target); io.unobserve(e.target); }
+      }),
+      { threshold: 0, rootMargin: '60px' },
     );
 
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    observeAll();
 
-    return () => {
-      observer.disconnect();
-      observerRegistered = false;
-    };
+    // Re-verifica quando novos elementos aparecerem no DOM (ex: após data fetch)
+    const mo = new MutationObserver(observeAll);
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => { io.disconnect(); mo.disconnect(); };
   }, []);
 }
 
-export function useLibraryMap() {
+// ── useLibraryMap ──────────────────────────────────────────
+export function useLibraryMap(): Map<number, StatusJogo> {
   const { isAuthenticated } = useAuth();
-  const { data = [] } = useQuery({
-    queryKey:  ['library', 'map'],
-    queryFn:   () => api.get('/library').then(r => r.data),
-    enabled:   isAuthenticated,
-    staleTime: 30_000,
+  const { data } = useQuery<StatusJogo[]>({
+    queryKey: ['library'],
+    queryFn:  () => api.get('/library').then(r => r.data),
+    enabled:  isAuthenticated,
+    staleTime: 60_000,
   });
-  return new Map(
-    (data as Array<{ jogo: { id_jogo: number }; [k: string]: unknown }>)
-      .map(item => [item.jogo.id_jogo, item]),
-  );
+  const map = new Map<number, StatusJogo>();
+  data?.forEach(item => map.set(item.id_jogo, item));
+  return map;
 }
 
-export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+// ── useClickOutside ────────────────────────────────────────
+export function useClickOutside<T extends HTMLElement>(cb: () => void) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) cb();
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [cb]);
+  return ref;
 }
