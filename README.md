@@ -39,16 +39,7 @@ O **Checkpoint** é uma rede social para gamers inspirada no Letterboxd. Os usu�
 
 ## Instalação e execução
 
-### 1. Extraia o ZIP e abra no VS Code
-
-```bash
-# Extraia o arquivo ZIP
-unzip checkpoint_v1_6.zip
-cd checkpoint_v1_6
-code .
-```
-
-### 2. Backend
+### 1. Backend
 
 ```bash
 cd backend
@@ -57,7 +48,7 @@ npm run db:setup
 npm run dev        
 ```
 
-### 3. Frontend (novo terminal)
+### 2. Frontend (novo terminal)
 
 ```bash
 cd frontend
