@@ -146,7 +146,7 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
           include: {
             jogo:    true,
             usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } }, // FIX: inclui usuario
-            _count:  { select: { likes: true, comentarios: true } },
+            _count:  { select: { reacoes: true, comentarios: true } },
           },
           orderBy: { created_at: 'desc' },
         },
@@ -187,7 +187,7 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
       estatisticas,
       avaliacoes: usuario.avaliacoes.map(a => ({
         ...a,
-        likes_count:    a._count.likes,
+        likes_count:    a._count.reacoes,
         comments_count: a._count.comentarios,
       })),
       listas:      usuario.listas.map(l => ({ ...l, likes_count: l._count.likes })),

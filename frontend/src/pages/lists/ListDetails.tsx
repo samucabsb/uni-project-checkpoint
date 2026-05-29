@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Heart, Plus, Trash2, ArrowUp, ArrowDown, Lock, Pencil, Check } from 'lucide-react';
+import { BackButton } from '../../components/BackButton';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -98,6 +99,7 @@ export function ListDetails() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallback="/listas"/>
       <div className="card rounded-3xl p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">

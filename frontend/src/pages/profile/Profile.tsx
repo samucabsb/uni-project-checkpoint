@@ -1,36 +1,31 @@
 /**
- * Perfil — v1.6
- * Fixes: label "Vitrine", remover da vitrine, editar perfil
+ * Perfil — v1.7
+ * Usa VitrineSection, EditProfileModal e componentes modularizados
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { UserPlus, UserMinus, Trophy, Gamepad, Clock, Heart, Pencil, X, Check } from 'lucide-react';
+import { UserPlus, UserMinus, Trophy, Gamepad, Clock, Heart, Pencil } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Usuario } from '../../types';
-import { Avatar, Stars, ReviewCard, Skeleton, Modal, Button, Input, TextArea } from '../../components/ui';
+import { Avatar, Stars, ReviewCard, Skeleton, Button } from '../../components/ui';
+import { VitrineSection } from '../../components/vitrine/VitrineSection';
+import { EditProfileModal } from '../../components/profile/EditProfileModal';
 
 type Tab = 'visao' | 'avaliacoes' | 'listas' | 'diario';
 
 export default function Profile() {
   const { id }    = useParams<{ id: string }>();
-  const { user, refreshMe } = useAuth();
+  const { user }  = useAuth();
   const { toast } = useToast();
   const qc        = useQueryClient();
+
   const [tab, setTab]               = useState<Tab>('visao');
   const [followState, setFollowState] = useState<{ following: boolean; count: number } | null>(null);
-  const [editModal, setEditModal]   = useState(false);
-  const [editForm, setEditForm]     = useState({ bio_usuario: '', img_usuario: '' });
-  const [editLoading, setEditLoading] = useState(false);
-  const [vitrineRemoving, setVitrineRemoving] = useState<number | null>(null);
-  const [vitrineModal, setVitrineModal] = useState(false);
-  const [vitrineSearch, setVitrineSearch] = useState('');
-  const [vitrineResults, setVitrineResults] = useState<{ id_jogo: number; nm_jogo: string; img_jogo: string }[]>([]);
-  const [vitrinePosition, setVitrinePosition] = useState(1);
-  const [vitrineAdding, setVitrineAdding] = useState(false);
+  const [editOpen, setEditOpen]     = useState(false);
 
   const profileKey = ['profile', id];
   const { data: perfil, isLoading } = useQuery<Usuario>({
@@ -39,16 +34,9 @@ export default function Profile() {
     enabled:  !!id,
   });
 
-  useEffect(() => {
-    if (perfil) {
-      setEditForm({ bio_usuario: perfil.bio_usuario || '', img_usuario: perfil.img_usuario || '' });
-    }
-  }, [perfil]);
-
   const isMe        = user?.id_usuario === Number(id);
   const isFollowing = followState?.following ?? (perfil?.isFollowing ?? false);
   const seguidores  = followState?.count     ?? (perfil?._count?.seguidores ?? 0);
-  const seguindo    = perfil?._count?.seguindo ?? 0;
 
   async function toggleFollow() {
     if (!user) return toast('Faça login para seguir.', 'info');
@@ -66,59 +54,11 @@ export default function Profile() {
     } catch { toast('Erro ao seguir.', 'error'); }
   }
 
-  async function saveProfile() {
-    setEditLoading(true);
-    try {
-      await api.put('/users/me', {
-        bio_usuario: editForm.bio_usuario || null,
-        img_usuario: editForm.img_usuario || null,
-      });
-      await refreshMe();
-      qc.invalidateQueries({ queryKey: profileKey });
-      setEditModal(false);
-      toast('Perfil atualizado!');
-    } catch { toast('Erro ao salvar.', 'error'); }
-    finally { setEditLoading(false); }
-  }
-
-  async function removeFromVitrine(position: number) {
-    setVitrineRemoving(position);
-    try {
-      await api.delete(`/users/vitrine/${position}`);
-      qc.invalidateQueries({ queryKey: profileKey });
-      toast('Removido da vitrine.');
-    } catch { toast('Erro ao remover.', 'error'); }
-    finally { setVitrineRemoving(null); }
-  }
-
-  async function searchGamesForVitrine(q: string) {
-    setVitrineSearch(q);
-    if (q.length < 2) { setVitrineResults([]); return; }
-    try {
-      const r = await api.get('/games/search', { params: { q } });
-      setVitrineResults(r.data);
-    } catch {}
-  }
-
-  async function addToVitrine(id_jogo: number) {
-    setVitrineAdding(true);
-    try {
-      await api.post('/users/vitrine', { id_jogo, top_position: vitrinePosition });
-      qc.invalidateQueries({ queryKey: profileKey });
-      setVitrineModal(false);
-      setVitrineSearch(''); setVitrineResults([]);
-      toast('Adicionado à vitrine!');
-    } catch { toast('Erro ao atualizar vitrine.', 'error'); }
-    finally { setVitrineAdding(false); }
-  }
-
   if (isLoading) return (
     <div className="space-y-5">
       <Skeleton className="h-48 rounded-3xl"/>
-      <div className="grid grid-cols-4 gap-3">
-        {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 rounded-2xl"/>)}
-      </div>
-      <Skeleton className="h-64 rounded-2xl"/>
+      <div className="grid grid-cols-4 gap-3">{[1,2,3,4].map(i=><Skeleton key={i} className="aspect-[2/3] rounded-2xl"/>)}</div>
+      <div className="grid grid-cols-4 gap-3">{[1,2,3,4].map(i=><Skeleton key={i} className="h-24 rounded-2xl"/>)}</div>
     </div>
   );
   if (!perfil) return <p className="text-zinc-400">Usuário não encontrado.</p>;
@@ -126,14 +66,14 @@ export default function Profile() {
   const vitrine      = (perfil.status_jogos || []).filter(s => s.top_position !== null).sort((a,b) => (a.top_position ?? 99) - (b.top_position ?? 99));
   const estatisticas = perfil.estatisticas  || { zerados: 0, jogando: 0, quero_jogar: 0, favoritos: 0 };
   const totalAvs     = perfil._count?.avaliacoes || 0;
-
-  const avgNota = totalAvs > 0 && (perfil.avaliacoes?.length ?? 0) > 0
+  const seguindo     = perfil._count?.seguindo ?? 0;
+  const avgNota      = totalAvs > 0 && (perfil.avaliacoes?.length ?? 0) > 0
     ? (perfil.avaliacoes!.reduce((s, a) => s + a.nota, 0) / perfil.avaliacoes!.length / 2).toFixed(1)
     : null;
 
   return (
     <div className="space-y-8">
-      {/* ── Header ────────────────────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────────── */}
       <div className="card rounded-3xl p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <Avatar src={perfil.img_usuario} name={perfil.nm_usuario} size="lg"/>
@@ -145,18 +85,16 @@ export default function Profile() {
                   <span className="mt-1 inline-block rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-bold text-yellow-400">Admin</span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {isMe && (
-                  <button onClick={() => setEditModal(true)}
-                    className="flex items-center gap-2 rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-bold hover:bg-zinc-700 transition">
-                    <Pencil size={14}/> Editar perfil
+                  <button onClick={() => setEditOpen(true)}
+                    className="flex items-center gap-1.5 rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-bold hover:bg-zinc-700 transition">
+                    <Pencil size={13}/> Editar perfil
                   </button>
                 )}
                 {!isMe && (
-                  <button onClick={toggleFollow} aria-label={isFollowing ? 'Deixar de seguir' : 'Seguir'}
-                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
-                      isFollowing ? 'bg-zinc-800 text-zinc-300 hover:bg-red-900/20 hover:text-red-400' : 'bg-checkpoint-green text-black'
-                    }`}>
+                  <button onClick={toggleFollow} aria-label={isFollowing?'Deixar de seguir':'Seguir'}
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${isFollowing ? 'bg-zinc-800 text-zinc-300 hover:bg-red-900/20 hover:text-red-400' : 'bg-checkpoint-green text-black'}`}>
                     {isFollowing ? <><UserMinus size={14}/> Seguindo</> : <><UserPlus size={14}/> Seguir</>}
                   </button>
                 )}
@@ -173,59 +111,10 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── Vitrine ───────────────────────────────────────── */}
-      <section>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-black">Vitrine</h2>
-          {isMe && vitrine.length < 4 && (
-            <button onClick={() => setVitrineModal(true)}
-              className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-bold hover:bg-zinc-700 transition flex items-center gap-1">
-              + Adicionar
-            </button>
-          )}
-        </div>
-        {vitrine.length === 0 && isMe ? (
-          <div className="card rounded-2xl p-8 text-center space-y-3">
-            <p className="font-black text-lg">Sua vitrine está vazia</p>
-            <p className="text-sm text-zinc-400">Escolha até 4 jogos para destacar no seu perfil, como o Letterboxd.</p>
-            <Button onClick={() => setVitrineModal(true)} className="mx-auto flex items-center gap-2">
-              + Montar Vitrine
-            </Button>
-          </div>
-        ) : vitrine.length === 0 ? (
-          <p className="text-zinc-500 text-sm">Este usuário ainda não montou a vitrine.</p>
-        ) : (
-          <div className="grid grid-cols-4 gap-2 sm:gap-3">
-            {vitrine.map(s => (
-              <div key={s.id_jogo} className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-zinc-900">
-                <Link to={`/jogos/${s.id_jogo}`} className="block h-full w-full">
-                  <img src={s.jogo.img_jogo} alt={s.jogo.nm_jogo}
-                    onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/200x280/18181f/00e187?text=${encodeURIComponent(s.jogo.nm_jogo.slice(0,2))}`; }}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"/>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-xs font-bold line-clamp-2">{s.jogo.nm_jogo}</p>
-                  </div>
-                </Link>
-                {/* Botão remover — só para o dono */}
-                {isMe && (
-                  <button
-                    onClick={() => removeFromVitrine(s.top_position!)}
-                    disabled={vitrineRemoving === s.top_position}
-                    aria-label={`Remover ${s.jogo.nm_jogo} da vitrine`}
-                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-zinc-300 opacity-0 transition hover:bg-red-900/80 hover:text-white group-hover:opacity-100 disabled:opacity-40"
-                  >
-                    {vitrineRemoving === s.top_position
-                      ? <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent"/>
-                      : <X size={13}/>}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* ── Vitrine ─────────────────────────────────────────── */}
+      <VitrineSection vitrine={vitrine} isOwner={isMe} profileId={Number(id)}/>
 
-      {/* ── Estatísticas ──────────────────────────────────── */}
+      {/* ── Estatísticas ────────────────────────────────────── */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { icon: <Trophy size={16}/>, label: 'Zerados',     val: estatisticas.zerados     },
@@ -241,76 +130,59 @@ export default function Profile() {
         ))}
       </section>
 
-      {/* ── Tabs ──────────────────────────────────────────── */}
+      {/* ── Tabs ────────────────────────────────────────────── */}
       <div className="flex gap-2 flex-wrap">
-        {([
-          ['visao',     'Visão geral'],
-          ['avaliacoes','Avaliações'],
-          ['listas',    'Listas'],
-          ['diario',    'Diário'],
-        ] as [Tab, string][]).map(([t, l]) => (
+        {([['visao','Visão geral'],['avaliacoes','Avaliações'],['listas','Listas'],['diario','Diário']] as [Tab,string][]).map(([t,l]) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
-              tab === t ? 'bg-checkpoint-green text-black' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-            }`}>
+            className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${tab===t?'bg-checkpoint-green text-black':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
             {l}
           </button>
         ))}
       </div>
 
-      {/* ── Tab: Visão geral ──────────────────────────────── */}
       {tab === 'visao' && (
         <div className="space-y-6">
-          {(perfil.avaliacoes?.length || 0) > 0 && (
+          {(perfil.avaliacoes?.length||0) > 0 && (
             <div>
               <h3 className="mb-3 font-black">Últimas avaliações</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                {perfil.avaliacoes!.slice(0, 4).map(a => <ReviewCard key={a.id_avaliacao} review={a}/>)}
+                {perfil.avaliacoes!.slice(0,4).map(a => <ReviewCard key={a.id_avaliacao} review={a}/>)}
               </div>
-              {(perfil.avaliacoes?.length || 0) > 4 && (
-                <button onClick={() => setTab('avaliacoes')} className="mt-3 text-sm text-zinc-500 hover:text-white transition-colors">
-                  Ver todas as avaliações →
-                </button>
+              {(perfil.avaliacoes?.length||0) > 4 && (
+                <button onClick={() => setTab('avaliacoes')} className="mt-3 text-sm text-zinc-500 hover:text-white transition-colors">Ver todas →</button>
               )}
             </div>
           )}
-          {(perfil.listas?.length || 0) > 0 && (
+          {(perfil.listas?.length||0) > 0 && (
             <div>
               <h3 className="mb-3 font-black">Listas recentes</h3>
               <div className="grid gap-3 sm:grid-cols-2">
-                {perfil.listas!.slice(0, 2).map(l => (
+                {perfil.listas!.slice(0,2).map(l => (
                   <Link key={l.id_lista} to={`/listas/${l.id_lista}`} className="card card-hover flex items-center gap-3 rounded-2xl p-4">
                     <div className="flex h-12 w-12 flex-shrink-0 gap-0.5 overflow-hidden rounded-xl">
-                      {(l.jogos?.slice(0, 2) || []).map(({ jogo }, i) => (
-                        <img key={i} src={jogo.img_jogo} alt=""
-                          onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/24x48/18181f/00e187?text=?'; }}
-                          className="h-full flex-1 object-cover"/>
+                      {(l.jogos?.slice(0,2)||[]).map(({jogo},i) => (
+                        <img key={i} src={jogo.img_jogo} alt="" onError={e=>{(e.target as HTMLImageElement).src='https://placehold.co/24x48/18181f/00e187?text=?';}} className="h-full flex-1 object-cover object-top"/>
                       ))}
-                      {(l.jogos?.length || 0) < 2 && <div className="h-full flex-1 bg-zinc-800"/>}
+                      {(l.jogos?.length||0)<2 && <div className="h-full flex-1 bg-zinc-800"/>}
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold truncate">{l.nm_lista}</p>
-                      <p className="text-xs text-zinc-500">{l.jogos?.length || 0} jogos</p>
+                      <p className="text-xs text-zinc-500">{l.jogos?.length||0} jogos</p>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
           )}
-          {(perfil.avaliacoes?.length || 0) === 0 && (perfil.listas?.length || 0) === 0 && (
-            <div className="card rounded-2xl p-10 text-center">
-              <p className="text-zinc-400">Este usuário ainda não tem atividade registrada.</p>
-            </div>
+          {(perfil.avaliacoes?.length||0)===0 && (perfil.listas?.length||0)===0 && (
+            <div className="card rounded-2xl p-10 text-center"><p className="text-zinc-400">Nenhuma atividade registrada ainda.</p></div>
           )}
         </div>
       )}
 
-      {/* ── Tab: Avaliações ───────────────────────────────── */}
       {tab === 'avaliacoes' && (
         <div>
-          {!(perfil.avaliacoes?.length) ? (
-            <p className="text-zinc-400">Nenhuma avaliação publicada.</p>
-          ) : (
+          {!(perfil.avaliacoes?.length) ? <p className="text-zinc-400">Nenhuma avaliação.</p> : (
             <div className="grid gap-4 md:grid-cols-2">
               {perfil.avaliacoes!.map(a => <ReviewCard key={a.id_avaliacao} review={a}/>)}
             </div>
@@ -318,30 +190,21 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── Tab: Listas ───────────────────────────────────── */}
       {tab === 'listas' && (
         <div>
-          {!(perfil.listas?.length) ? (
-            <p className="text-zinc-400">Nenhuma lista criada.</p>
-          ) : (
+          {!(perfil.listas?.length) ? <p className="text-zinc-400">Nenhuma lista.</p> : (
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
               {perfil.listas!.map(l => (
                 <Link key={l.id_lista} to={`/listas/${l.id_lista}`} className="card card-hover rounded-2xl overflow-hidden">
                   <div className="flex h-20 bg-zinc-950">
-                    {(l.jogos?.slice(0, 4) || []).map(({ jogo }, i) => (
-                      <div key={i} className="flex-1 overflow-hidden">
-                        <img src={jogo.img_jogo} alt=""
-                          onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/18181f/00e187?text=?'; }}
-                          className="h-full w-full object-cover"/>
-                      </div>
+                    {(l.jogos?.slice(0,4)||[]).map(({jogo},i) => (
+                      <div key={i} className="flex-1 overflow-hidden"><img src={jogo.img_jogo} alt="" onError={e=>{(e.target as HTMLImageElement).src='https://placehold.co/80x80/18181f/00e187?text=?';}} className="h-full w-full object-cover object-top"/></div>
                     ))}
-                    {(l.jogos?.length || 0) < 4 && Array.from({ length: 4 - (l.jogos?.length || 0) }).map((_, i) => (
-                      <div key={i} className="flex-1 bg-zinc-900"/>
-                    ))}
+                    {(l.jogos?.length||0)<4 && Array.from({length:4-(l.jogos?.length||0)}).map((_,i)=><div key={i} className="flex-1 bg-zinc-900"/>)}
                   </div>
                   <div className="p-3">
                     <p className="font-bold line-clamp-1">{l.nm_lista}</p>
-                    <p className="text-xs text-zinc-500">{l.jogos?.length || 0} jogos · {l.likes_count || 0} ♥</p>
+                    <p className="text-xs text-zinc-500">{l.jogos?.length||0} jogos · {l.likes_count||0} ♥</p>
                   </div>
                 </Link>
               ))}
@@ -350,76 +213,20 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── Tab: Diário ───────────────────────────────────── */}
-      {/* ── Modal: montar vitrine ────────────────────────── */}
-      <Modal open={vitrineModal} onClose={() => { setVitrineModal(false); setVitrineSearch(''); setVitrineResults([]); }} title="Montar Vitrine">
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm text-zinc-300">Posição</label>
-            <div className="flex gap-2">
-              {[1,2,3,4].map(p => (
-                <button key={p} onClick={() => setVitrinePosition(p)}
-                  className={`flex-1 rounded-xl py-2 text-sm font-bold transition ${vitrinePosition === p ? 'bg-checkpoint-green text-black' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
-                  {p}
-                </button>
-              ))}
-            </div>
-            {vitrine.find(v => v.top_position === vitrinePosition) && (
-              <p className="mt-1 text-xs text-yellow-400">⚠ Esta posição já está ocupada. O jogo atual será substituído.</p>
-            )}
-          </div>
-          <Input value={vitrineSearch} onChange={e => searchGamesForVitrine(e.target.value)}
-            placeholder="Buscar jogo para adicionar…" autoFocus/>
-          {vitrineResults.length > 0 && (
-            <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-800 divide-y divide-zinc-800/50">
-              {vitrineResults.map(g => (
-                <button key={g.id_jogo} disabled={vitrineAdding}
-                  onClick={() => addToVitrine(g.id_jogo)}
-                  className="flex w-full items-center gap-3 p-3 hover:bg-zinc-800 transition text-left disabled:opacity-50">
-                  <img src={g.img_jogo} alt={g.nm_jogo}
-                    onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/36x48/18181f/00e187?text=?'; }}
-                    className="h-12 w-9 rounded object-cover flex-shrink-0"/>
-                  <span className="text-sm font-bold">{g.nm_jogo}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </Modal>
-
       {tab === 'diario' && <DiarioPublico userId={Number(id)} isMe={isMe}/>}
 
-      {/* ── Modal: editar perfil ──────────────────────────── */}
-      <Modal open={editModal} onClose={() => setEditModal(false)} title="Editar perfil">
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm text-zinc-300">Foto de perfil (URL)</label>
-            <Input value={editForm.img_usuario} onChange={e => setEditForm(f => ({ ...f, img_usuario: e.target.value }))} placeholder="https://exemplo.com/foto.jpg"/>
-            {editForm.img_usuario && (
-              <div className="mt-2 flex items-center gap-2">
-                <img src={editForm.img_usuario} alt="Preview" className="h-12 w-12 rounded-full object-cover bg-zinc-800"
-                  onError={e => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/8.x/adventurer/svg?seed=${perfil.nm_usuario}`; }}/>
-                <span className="text-xs text-zinc-500">Preview</span>
-              </div>
-            )}
-          </div>
-          <TextArea label="Bio" value={editForm.bio_usuario}
-            onChange={e => setEditForm(f => ({ ...f, bio_usuario: e.target.value }))}
-            placeholder="Fale um pouco sobre você…" className="min-h-24"/>
-          <div className="flex gap-3 pt-1">
-            <Button onClick={saveProfile} loading={editLoading} className="flex-1">
-              <Check size={14}/> Salvar
-            </Button>
-            <Button variant="secondary" onClick={() => setEditModal(false)}>Cancelar</Button>
-          </div>
-        </div>
-      </Modal>
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        userId={Number(id)}
+        current={{ bio: perfil.bio_usuario, img: perfil.img_usuario }}
+      />
     </div>
   );
 }
 
 function DiarioPublico({ userId, isMe }: { userId: number; isMe: boolean }) {
-  const { data: entries = [] } = useQuery({
+  const { data: entries=[] } = useQuery({
     queryKey: ['diary-user', userId],
     queryFn:  () => api.get(`/diary/user/${userId}`).then(r => r.data),
   });
@@ -432,19 +239,11 @@ function DiarioPublico({ userId, isMe }: { userId: number; isMe: boolean }) {
 
   return (
     <div className="space-y-3">
-      {entries.slice(0, 8).map((e: {
-        id_diario: number; data_jogada: string;
-        jogo: { id_jogo: number; nm_jogo: string; img_jogo: string };
-        nota?: number; comentario?: string;
-      }) => (
+      {entries.slice(0,8).map((e: { id_diario: number; data_jogada: string; jogo: { id_jogo: number; nm_jogo: string; img_jogo: string }; nota?: number; comentario?: string }) => (
         <div key={e.id_diario} className="card flex items-center gap-4 rounded-2xl p-3">
-          <img src={e.jogo.img_jogo} alt={e.jogo.nm_jogo}
-            onError={ev => { (ev.target as HTMLImageElement).src = 'https://placehold.co/36x48/18181f/00e187?text=?'; }}
-            className="h-14 w-10 rounded-lg object-cover flex-shrink-0"/>
+          <img src={e.jogo.img_jogo} alt={e.jogo.nm_jogo} onError={ev=>{(ev.target as HTMLImageElement).src='https://placehold.co/36x48/18181f/00e187?text=?';}} className="h-14 w-10 rounded-lg object-cover object-top flex-shrink-0"/>
           <div className="flex-1 min-w-0">
-            <Link to={`/jogos/${e.jogo.id_jogo}`} className="font-bold text-sm hover:text-checkpoint-green transition-colors line-clamp-1">
-              {e.jogo.nm_jogo}
-            </Link>
+            <Link to={`/jogos/${e.jogo.id_jogo}`} className="font-bold text-sm hover:text-checkpoint-green transition-colors line-clamp-1">{e.jogo.nm_jogo}</Link>
             <p className="text-xs text-zinc-500">{new Date(e.data_jogada).toLocaleDateString('pt-BR')}</p>
           </div>
           {e.nota && <div className="flex-shrink-0"><Stars value={e.nota} size={12}/></div>}

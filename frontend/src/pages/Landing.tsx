@@ -5,6 +5,7 @@
  */
 
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { Gamepad2, Users, Star, TrendingUp, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
@@ -14,6 +15,7 @@ import { DiscoverData, TrendingData } from '../types';
 
 export default function Landing() {
   useReveal();
+  const { user } = useAuth();
 
   const { data: stats }    = useQuery({ queryKey: ['stats'],            queryFn: () => api.get('/feed/stats').then(r => r.data),                                        staleTime: 60_000 });
   const { data: discover } = useQuery<DiscoverData>({ queryKey: ['feed','discover'], queryFn: () => api.get('/feed/discover').then(r => r.data),                        staleTime: 60_000 });
@@ -35,9 +37,15 @@ export default function Landing() {
             Registre o que jogou, descubra o que jogar e conecte-se com outros gamers.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link to="/cadastro" className="rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
-              Criar conta gratuita
-            </Link>
+            {user ? (
+              <Link to="/feed" className="rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
+                Ver meu feed
+              </Link>
+            ) : (
+              <Link to="/cadastro" className="rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
+                Criar conta gratuita
+              </Link>
+            )}
             <Link to="/jogos" className="rounded-xl bg-zinc-800 px-8 py-3.5 font-black hover:bg-zinc-700 transition border border-zinc-700">
               Explorar jogos
             </Link>
@@ -112,11 +120,24 @@ export default function Landing() {
 
       {/* ── CTA final ─────────────────────────────────────── */}
       <section className="reveal card rounded-3xl p-8 sm:p-12 text-center space-y-4">
-        <h2 className="text-4xl font-black">Pronto para jogar?</h2>
-        <p className="text-zinc-400">Crie sua conta e comece a registrar sua jornada gamer hoje.</p>
-        <Link to="/cadastro" className="inline-block rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
-          Começar agora — é grátis
-        </Link>
+        {user ? (
+          <>
+            <h2 className="text-4xl font-black">Continue explorando</h2>
+            <p className="text-zinc-400">Veja o que está em alta, descubra novos jogos ou confira seu perfil.</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/feed" className="rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">Ir para o feed</Link>
+              <Link to="/jogos" className="rounded-xl bg-zinc-800 px-8 py-3.5 font-black hover:bg-zinc-700 transition border border-zinc-700">Ver catálogo</Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="text-4xl font-black">Pronto para jogar?</h2>
+            <p className="text-zinc-400">Crie sua conta e comece a registrar sua jornada gamer hoje.</p>
+            <Link to="/cadastro" className="inline-block rounded-xl bg-checkpoint-green px-8 py-3.5 font-black text-black hover:brightness-110 transition">
+              Começar agora — é grátis
+            </Link>
+          </>
+        )}
       </section>
     </div>
   );

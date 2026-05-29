@@ -6,7 +6,7 @@
 
 import { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, ThumbsUp } from 'lucide-react';
+import { Heart, Star, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -286,28 +286,29 @@ export function GameCard({ game }: { game: Jogo }) {
   );
 }
 
-// ── ReviewCard ─────────────────────────────────────────────
-export function ReviewCard({ review, showLike=true, showGame=true }: {
-  review: Avaliacao; showLike?: boolean; showGame?: boolean;
+// ── ReviewCard — com LIKE e DISLIKE ──────────────────────
+export function ReviewCard({ review, showGame=true }: {
+  review: Avaliacao; showGame?: boolean;
 }) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [likes, setLikes]   = useState(review.likes_count || 0);
-  const [curtiu, setCurtiu] = useState(review.ja_curtiu || false);
   const isMine = user?.id_usuario === review.id_usuario;
 
-  async function toggleLike() {
-    if (!isAuthenticated) return toast('Faça login para curtir.', 'info');
-    if (isMine) return toast('Você não pode curtir sua própria avaliação.', 'info');
+  const [likes,    setLikes]    = useState(review.likes_count    || 0);
+  const [dislikes, setDislikes] = useState(review.dislikes_count || 0);
+  const [minhaReacao, setMinhaReacao] = useState<'LIKE'|'DISLIKE'|null>(
+    review.minha_reacao ?? (review.ja_curtiu ? 'LIKE' : null)
+  );
+
+  async function react(tipo: 'LIKE' | 'DISLIKE') {
+    if (!isAuthenticated) return toast('Faça login para reagir.', 'info');
+    if (isMine)           return toast('Você não pode reagir à sua própria avaliação.', 'info');
     try {
-      if (curtiu) {
-        const r = await api.delete(`/reviews/${review.id_avaliacao}/like`);
-        setLikes(r.data.likes_count); setCurtiu(false);
-      } else {
-        const r = await api.post(`/reviews/${review.id_avaliacao}/like`);
-        setLikes(r.data.likes_count); setCurtiu(true);
-      }
-    } catch { toast('Erro ao curtir.', 'error'); }
+      const r = await api.post(`/reviews/${review.id_avaliacao}/react`, { tipo });
+      setLikes(r.data.likes_count);
+      setDislikes(r.data.dislikes_count);
+      setMinhaReacao(r.data.minha_reacao);
+    } catch { toast('Erro ao reagir.', 'error'); }
   }
 
   return (
@@ -329,7 +330,6 @@ export function ReviewCard({ review, showLike=true, showGame=true }: {
             </p>
           )}
         </div>
-        {/* Link para página individual da review */}
         <Link to={`/reviews/${review.id_avaliacao}`} className="ml-auto flex-shrink-0 text-xs text-zinc-600 hover:text-zinc-400 transition-colors" title="Ver avaliação completa">
           #
         </Link>
@@ -341,18 +341,24 @@ export function ReviewCard({ review, showLike=true, showGame=true }: {
         <p className="mt-3 text-sm leading-relaxed text-zinc-300 line-clamp-3">{review.comentario}</p>
       )}
 
-      <div className="mt-3 flex items-center gap-3">
-        {showLike && (
-          <button onClick={toggleLike} disabled={isMine}
-            aria-label={curtiu ? 'Descurtir avaliação' : 'Curtir avaliação'}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${curtiu ? 'bg-checkpoint-green/10 text-checkpoint-green' : 'text-zinc-500 hover:text-zinc-300 disabled:cursor-default'}`}>
-            <ThumbsUp size={12} fill={curtiu ? 'currentColor' : 'none'}/>
-            {likes > 0 && <span>{likes}</span>}
-          </button>
-        )}
+      <div className="mt-3 flex items-center gap-2">
+        {/* Like */}
+        <button onClick={() => react('LIKE')} disabled={isMine}
+          aria-label={minhaReacao === 'LIKE' ? 'Remover like' : 'Curtir'}
+          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition disabled:cursor-default ${minhaReacao === 'LIKE' ? 'bg-checkpoint-green/10 text-checkpoint-green' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <ThumbsUp size={12} fill={minhaReacao === 'LIKE' ? 'currentColor' : 'none'}/>
+          {likes > 0 && <span>{likes}</span>}
+        </button>
+        {/* Dislike */}
+        <button onClick={() => react('DISLIKE')} disabled={isMine}
+          aria-label={minhaReacao === 'DISLIKE' ? 'Remover dislike' : 'Não curtir'}
+          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition disabled:cursor-default ${minhaReacao === 'DISLIKE' ? 'bg-red-500/10 text-red-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <ThumbsDown size={12} fill={minhaReacao === 'DISLIKE' ? 'currentColor' : 'none'}/>
+          {dislikes > 0 && <span>{dislikes}</span>}
+        </button>
         {(review.comments_count || 0) > 0 && (
           <Link to={`/reviews/${review.id_avaliacao}`}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+            className="ml-1 text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
             {review.comments_count} comentário{review.comments_count !== 1 ? 's' : ''}
           </Link>
         )}

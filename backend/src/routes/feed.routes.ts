@@ -33,7 +33,7 @@ feedRouter.get('/me', authMiddleware, async (req: AuthRequest, res, next) => {
         usuario:      { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
         usuario_alvo: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
         jogo:         true,
-        avaliacao:    { include: { _count: { select: { likes: true } } } },
+        avaliacao:    { include: { _count: { select: { reacoes: true } } } },
         lista:        { include: { _count: { select: { likes: true } } } },
       },
       orderBy: { created_at: 'desc' },
@@ -48,7 +48,7 @@ feedRouter.get('/discover', async (_req, res, next) => {
   try {
     const [reviews, lists, games, recentReviewers] = await Promise.all([
       prisma.tAB_AVALIACAO.findMany({
-        include: { usuario: true, jogo: true, _count: { select: { likes: true, comentarios: true } } },
+        include: { usuario: true, jogo: true, _count: { select: { reacoes: true, comentarios: true } } },
         orderBy: { created_at: 'desc' },
         take:    20,
       }),
@@ -75,10 +75,10 @@ feedRouter.get('/discover', async (_req, res, next) => {
       reviews: reviews.map(r => ({
         ...r,
         usuario:         sanitizeUser(r.usuario as unknown as Record<string, unknown>),
-        likes_count:     r._count.likes,
+        likes_count:     r._count.reacoes,
         comments_count:  r._count.comentarios,
       })),
-      lists:  lists.map(l => ({ ...l, likes_count: l._count.likes })),
+      lists:  lists.map(l => ({ ...l, likes_count: l._count.reacoes })),
       games:  games.map(calcMedia),
       users:  recentReviewers.map(r => r.usuario),
     });
@@ -101,7 +101,7 @@ feedRouter.get('/following', authMiddleware, async (req: AuthRequest, res, next)
         usuario:      { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
         usuario_alvo: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
         jogo:         true,
-        avaliacao:    { include: { _count: { select: { likes: true } } } },
+        avaliacao:    { include: { _count: { select: { reacoes: true } } } },
         lista:        { include: { _count: { select: { likes: true } } } },
       },
       orderBy: { created_at: 'desc' },
@@ -133,10 +133,10 @@ feedRouter.get('/trending', async (req, res, next) => {
         include: {
           usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
           jogo:    true,
-          _count:  { select: { likes: true } },
+          _count:  { select: { reacoes: true } },
         },
         where:   { created_at: { gte: from } },
-        orderBy: { likes: { _count: 'desc' } },
+        orderBy: { reacoes: { _count: 'desc' } },
         take:    6,
       }),
       // Listas com mais likes
@@ -150,8 +150,8 @@ feedRouter.get('/trending', async (req, res, next) => {
 
     return res.json({
       games:   games.map(calcMedia),
-      reviews: reviews.map(r => ({ ...r, likes_count: r._count.likes })),
-      lists:   lists.map(l => ({ ...l, likes_count: l._count.likes })),
+      reviews: reviews.map(r => ({ ...r, likes_count: r._count.reacoes })),
+      lists:   lists.map(l => ({ ...l, likes_count: l._count.reacoes })),
       periodo,
     });
   } catch (err) { next(err); }

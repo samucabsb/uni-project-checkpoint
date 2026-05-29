@@ -10,7 +10,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const qc        = useQueryClient();
   const [tab, setTab] = useState<'dashboard'|'jogos'>('dashboard');
-  const [form, setForm] = useState({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', descricao:'', dt_jogo:'' });
+  const [form, setForm] = useState({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', jogadores:'', descricao:'', dt_jogo:'' });
   const [editId, setEditId]   = useState<number|null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +24,7 @@ export default function AdminPage() {
       if (editId) { await api.put(`/games/${editId}`, form); toast('Jogo atualizado!'); setEditId(null); }
       else        { await api.post('/games', form);          toast('Jogo criado!'); }
       qc.invalidateQueries({ queryKey:['games'] });
-      setForm({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', descricao:'', dt_jogo:'' });
+      setForm({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', jogadores:'', descricao:'', dt_jogo:'' });
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erro ao salvar.';
       toast(msg, 'error');
@@ -86,13 +86,14 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input label="Gênero" value={form.genero} onChange={e => setForm(f => ({...f, genero: e.target.value}))} placeholder="RPG"/>
               <Input label="Classificação" value={form.classificacao} onChange={e => setForm(f => ({...f, classificacao: e.target.value}))} placeholder="18+"/>
+            <Input label="Jogadores" value={form.jogadores} onChange={e => setForm(f => ({...f, jogadores: e.target.value}))} placeholder="Solo / Multiplayer"/>
             </div>
             <Input label="Plataformas" value={form.plataforma} onChange={e => setForm(f => ({...f, plataforma: e.target.value}))} placeholder="PC / PS5"/>
             <Input label="Data de lançamento *" type="date" value={form.dt_jogo} onChange={e => setForm(f => ({...f, dt_jogo: e.target.value}))}/>
             <TextArea label="Descrição" value={form.descricao} onChange={e => setForm(f => ({...f, descricao: e.target.value}))} placeholder="Sobre o jogo…"/>
             <div className="flex gap-3">
               <Button onClick={handleSubmit} loading={loading} className="flex-1">{editId ? 'Atualizar' : 'Criar jogo'}</Button>
-              {editId && <Button variant="secondary" onClick={() => { setEditId(null); setForm({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', descricao:'', dt_jogo:'' }); }}>Cancelar</Button>}
+              {editId && <Button variant="secondary" onClick={() => { setEditId(null); setForm({ nm_jogo:'', img_jogo:'', genero:'', plataforma:'', classificacao:'', jogadores:'', descricao:'', dt_jogo:'' }); }}>Cancelar</Button>}
             </div>
           </div>
 
@@ -106,7 +107,7 @@ export default function AdminPage() {
                   <p className="text-xs text-zinc-500">{j.genero} · {new Date(j.dt_jogo).getFullYear()}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setEditId(j.id_jogo); setForm({ nm_jogo:j.nm_jogo||'', img_jogo:j.img_jogo||'', genero:j.genero||'', plataforma:j.plataforma||'', classificacao:j.classificacao||'', descricao:j.descricao||'', dt_jogo:j.dt_jogo?j.dt_jogo.split('T')[0]:'' }); setTab('jogos'); }}
+                  <button onClick={() => { setEditId(j.id_jogo); setForm({ nm_jogo:j.nm_jogo||'', img_jogo:j.img_jogo||'', genero:j.genero||'', plataforma:j.plataforma||'', classificacao:j.classificacao||'', jogadores:(j as {jogadores?:string}).jogadores||'', descricao:j.descricao||'', dt_jogo:j.dt_jogo?j.dt_jogo.split('T')[0]:'' }); setTab('jogos'); }}
                     className="rounded-lg bg-zinc-800 p-2 text-xs hover:bg-zinc-700 transition">Editar</button>
                   <button onClick={() => handleDelete(j.id_jogo)} className="rounded-lg bg-zinc-800 p-2 text-xs text-red-400 hover:bg-red-900/20 transition">Excluir</button>
                 </div>
