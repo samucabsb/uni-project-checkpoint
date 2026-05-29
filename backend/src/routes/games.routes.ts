@@ -1,6 +1,6 @@
 /**
- * Rotas de Jogos — v1.6
- * Adições: listas que contêm o jogo, popular por período
+ * Rotas de Jogos — v1.7
+ * FIX: GET /:id agora usa optionalAuth e retorna minha_reacao + dislikes_count
  */
 
 import { Router } from 'express';
@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { calcMedia } from '../utils/helpers';
 import { logAtividade } from '../utils/activities';
-import { authMiddleware, adminMiddleware, AuthRequest } from '../middlewares/authMiddleware';
+import { authMiddleware, adminMiddleware, optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId, clamp } from '../utils/validate';
 
 export const gamesRouter = Router();
@@ -19,6 +19,7 @@ const jogoSchema = z.object({
   genero:        z.string().max(50).optional().nullable(),
   plataforma:    z.string().max(100).optional().nullable(),
   classificacao: z.string().max(10).optional().nullable(),
+  jogadores:     z.string().max(50).optional().nullable(),
   descricao:     z.string().max(2000).optional().nullable(),
   dt_jogo:       z.string().refine(v => !isNaN(Date.parse(v)), 'Data inválida'),
 });
@@ -44,7 +45,7 @@ gamesRouter.get('/', async (req, res, next) => {
     const jogos = await prisma.tAB_JOGOS.findMany({
       where:   { AND },
       include: { avaliacoes: { select: { nota: true } }, _count: { select: { status_jogos: true } } },
-      orderBy: (orderByMap[sort] ?? { nm_jogo: "asc" }) as { [key: string]: "asc" | "desc" },
+      orderBy: (orderByMap[sort] ?? { nm_jogo: 'asc' }) as { [key: string]: 'asc' | 'desc' },
       take:    clamp(Number(take) || 60, 1, 100),
     });
 
@@ -91,8 +92,8 @@ gamesRouter.get('/popular', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── GET /games/:id ────────────────────────────────────────
-gamesRouter.get('/:id', async (req, res, next) => {
+// ── GET /games/:id — com optionalAuth para minha_reacao ──
+gamesRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
     if (id === null) return;
@@ -103,7 +104,7 @@ gamesRouter.get('/:id', async (req, res, next) => {
         avaliacoes: {
           include: {
             usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
-            _count:  { select: { likes: true, comentarios: true } },
+            _count:  { select: { reacoes: true, comentarios: true } },
           },
           orderBy: { created_at: 'desc' },
         },
@@ -125,14 +126,37 @@ gamesRouter.get('/:id', async (req, res, next) => {
     for (let i = 1; i <= 10; i++) distribuicao[i] = 0;
     jogo.avaliacoes.forEach(a => { distribuicao[a.nota] = (distribuicao[a.nota] || 0) + 1; });
 
+    // Reações do usuário logado para as avaliações deste jogo
+    const avIds = jogo.avaliacoes.map(a => a.id_avaliacao);
+    const reacoesMap = new Map<number, string>();
+    const dislikeMap = new Map<number, number>();
+    const likeMap    = new Map<number, number>();
+
+    if (avIds.length > 0) {
+      const todasReacoes = await prisma.tAB_REACAO_REVIEW.findMany({
+        where:  { id_avaliacao: { in: avIds } },
+        select: { id_avaliacao: true, id_usuario: true, tipo: true },
+      });
+
+      todasReacoes.forEach(r => {
+        if (r.tipo === 'LIKE')    likeMap.set(r.id_avaliacao,    (likeMap.get(r.id_avaliacao)    ?? 0) + 1);
+        if (r.tipo === 'DISLIKE') dislikeMap.set(r.id_avaliacao, (dislikeMap.get(r.id_avaliacao) ?? 0) + 1);
+        if (req.usuario && r.id_usuario === req.usuario.id_usuario) {
+          reacoesMap.set(r.id_avaliacao, r.tipo);
+        }
+      });
+    }
+
     return res.json({
       ...calcMedia(jogo),
       distribuicao_notas: distribuicao,
       listas_com_jogo:    listasComJogo,
       avaliacoes: jogo.avaliacoes.map(a => ({
         ...a,
-        likes_count:    a._count.likes,
+        likes_count:    likeMap.get(a.id_avaliacao)    ?? 0,
+        dislikes_count: dislikeMap.get(a.id_avaliacao) ?? 0,
         comments_count: a._count.comentarios,
+        minha_reacao:   reacoesMap.get(a.id_avaliacao) ?? null,
       })),
     });
   } catch (err) { next(err); }

@@ -3,7 +3,8 @@
  * Novas rotas: /reviews/:id, /diario
  */
 
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Layout, Private, AdminOnly } from './components/Layout';
 import Landing             from './pages/Landing';
 import { Login, Register } from './pages/auth';
@@ -20,6 +21,12 @@ import AdminPage           from './pages/admin/Admin';
 import NotFound            from './pages/NotFound';
 
 export default function App() {
+  // Rola para o topo ao navegar entre páginas
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
+
   return (
     <Routes>
       <Route element={<Layout />}>

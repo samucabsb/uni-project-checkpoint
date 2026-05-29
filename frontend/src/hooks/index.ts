@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -85,3 +86,13 @@ export function useClickOutside<T extends HTMLElement>(cb: () => void) {
   }, [cb]);
   return ref;
 }
+
+// ── useScrollTop ───────────────────────────────────────────
+// Rola para o topo instantaneamente ao mudar de rota
+export function useScrollTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
+}
+

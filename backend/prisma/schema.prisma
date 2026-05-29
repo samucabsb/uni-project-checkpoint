@@ -1,8 +1,9 @@
 // ============================================================
-// Checkpoint v1.6 — Schema Prisma (SQLite)
-// NOTA: SQLite não suporta enums no Prisma.
-// Os campos usam String com valores restritos via Zod nas rotas.
-// Valores válidos documentados nos comentários abaixo.
+// Checkpoint v1.7 — Schema Prisma (SQLite)
+// Mudanças v1.7:
+//   - Campo jogadores em TAB_JOGOS
+//   - TAB_REACAO_REVIEW substitui TAB_LIKE_REVIEW
+//     (suporta LIKE e DISLIKE numa única tabela)
 // ============================================================
 
 generator client {
@@ -15,7 +16,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ── Usuário ───────────────────────────────────────────────
 // tipo_usuario: "USER" | "ADMIN"
 model TAB_USUARIO {
   id_usuario    Int      @id @default(autoincrement())
@@ -33,18 +33,18 @@ model TAB_USUARIO {
   status_jogos    TAB_STATUS_JOGO[]
   seguidores      TAB_FOLLOW[]           @relation("seguidos")
   seguindo        TAB_FOLLOW[]           @relation("seguidores")
-  likes_reviews   TAB_LIKE_REVIEW[]
-  likes_listas    TAB_LIKE_LISTA[]
+  reacoes         TAB_REACAO_REVIEW[]
   comentarios     TAB_COMENTARIO_REVIEW[]
   atividades      TAB_ATIVIDADE[]        @relation("atividades_autor")
   atividades_alvo TAB_ATIVIDADE[]        @relation("atividades_alvo")
   diario          TAB_DIARIO_JOGO[]
+  likes_listas    TAB_LIKE_LISTA[]
 
   @@index([nm_usuario])
   @@map("TAB_USUARIO")
 }
 
-// ── Jogo ──────────────────────────────────────────────────
+// jogadores: "Solo" | "Até 2 jogadores" | "Multiplayer online" | etc.
 model TAB_JOGOS {
   id_jogo       Int      @id @default(autoincrement())
   id_usuario    Int
@@ -53,6 +53,7 @@ model TAB_JOGOS {
   genero        String?
   plataforma    String?
   classificacao String?
+  jogadores     String?  // NOVO v1.7
   descricao     String?
   dt_jogo       DateTime
   created_at    DateTime @default(now())
@@ -69,8 +70,7 @@ model TAB_JOGOS {
   @@map("TAB_JOGOS")
 }
 
-// ── Avaliação ─────────────────────────────────────────────
-// nota: 1-10 (exibição = nota / 2, ex: 10 → 5 estrelas)
+// nota 1-10 → display = nota / 2 (0.5 a 5.0 estrelas)
 model TAB_AVALIACAO {
   id_avaliacao Int       @id @default(autoincrement())
   id_usuario   Int
@@ -83,7 +83,7 @@ model TAB_AVALIACAO {
 
   usuario     TAB_USUARIO            @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   jogo        TAB_JOGOS              @relation(fields: [id_jogo], references: [id_jogo], onDelete: Cascade)
-  likes       TAB_LIKE_REVIEW[]
+  reacoes     TAB_REACAO_REVIEW[]
   comentarios TAB_COMENTARIO_REVIEW[]
   atividades  TAB_ATIVIDADE[]
 
@@ -93,20 +93,23 @@ model TAB_AVALIACAO {
   @@map("TAB_AVALIACAO")
 }
 
-// ── Like em Avaliação ─────────────────────────────────────
-model TAB_LIKE_REVIEW {
+// NOVO v1.7 — substitui TAB_LIKE_REVIEW
+// tipo: "LIKE" | "DISLIKE"
+// Regras: uma reação por usuário/avaliação; trocar remove a anterior
+model TAB_REACAO_REVIEW {
   id_usuario   Int
   id_avaliacao Int
+  tipo         String   // "LIKE" | "DISLIKE"
   created_at   DateTime @default(now())
 
   usuario   TAB_USUARIO   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   avaliacao TAB_AVALIACAO @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: Cascade)
 
   @@id([id_usuario, id_avaliacao])
-  @@map("TAB_LIKE_REVIEW")
+  @@index([id_avaliacao])
+  @@map("TAB_REACAO_REVIEW")
 }
 
-// ── Comentário em Avaliação ───────────────────────────────
 model TAB_COMENTARIO_REVIEW {
   id_comentario Int      @id @default(autoincrement())
   id_usuario    Int
@@ -122,7 +125,6 @@ model TAB_COMENTARIO_REVIEW {
   @@map("TAB_COMENTARIO_REVIEW")
 }
 
-// ── Lista de Jogos ────────────────────────────────────────
 model TAB_LISTA {
   id_lista   Int      @id @default(autoincrement())
   id_usuario Int
@@ -142,7 +144,6 @@ model TAB_LISTA {
   @@map("TAB_LISTA")
 }
 
-// ── Relação Lista ↔ Jogo (com ordenação manual) ───────────
 model TAB_LISTA_JOGO {
   id_lista Int
   id_jogo  Int
@@ -155,7 +156,6 @@ model TAB_LISTA_JOGO {
   @@map("TAB_LISTA_JOGO")
 }
 
-// ── Like em Lista ─────────────────────────────────────────
 model TAB_LIKE_LISTA {
   id_usuario Int
   id_lista   Int
@@ -168,7 +168,6 @@ model TAB_LIKE_LISTA {
   @@map("TAB_LIKE_LISTA")
 }
 
-// ── Seguimento ────────────────────────────────────────────
 model TAB_FOLLOW {
   id_usuario_seguidor Int
   id_usuario_seguido  Int
@@ -182,7 +181,6 @@ model TAB_FOLLOW {
   @@map("TAB_FOLLOW")
 }
 
-// ── Status de jogo na biblioteca ──────────────────────────
 // status: "QUERO_JOGAR" | "JOGANDO" | "ZERADO" | "ABANDONADO"
 model TAB_STATUS_JOGO {
   id_status    Int      @id @default(autoincrement())
@@ -202,10 +200,8 @@ model TAB_STATUS_JOGO {
   @@map("TAB_STATUS_JOGO")
 }
 
-// ── Feed de Atividades ────────────────────────────────────
-// tipo: "AVALIOU_JOGO" | "CURTIU_REVIEW" | "CRIOU_LISTA" |
-//       "ADICIONOU_JOGO_LISTA" | "FAVORITOU_JOGO" |
-//       "MUDOU_STATUS" | "SEGUIU_USUARIO" | "CURTIU_LISTA"
+// tipo: "AVALIOU_JOGO"|"CURTIU_REVIEW"|"CRIOU_LISTA"|"ADICIONOU_JOGO_LISTA"
+//       |"FAVORITOU_JOGO"|"MUDOU_STATUS"|"SEGUIU_USUARIO"|"CURTIU_LISTA"
 model TAB_ATIVIDADE {
   id_atividade    Int      @id @default(autoincrement())
   id_usuario      Int
@@ -217,7 +213,7 @@ model TAB_ATIVIDADE {
   dados_extras    String?
   created_at      DateTime @default(now())
 
-  usuario      TAB_USUARIO    @relation("atividades_autor", fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  usuario      TAB_USUARIO    @relation("atividades_autor", fields: [id_usuario],      references: [id_usuario], onDelete: Cascade)
   usuario_alvo TAB_USUARIO?   @relation("atividades_alvo",  fields: [id_usuario_alvo], references: [id_usuario], onDelete: SetNull)
   jogo         TAB_JOGOS?     @relation(fields: [id_jogo],      references: [id_jogo],      onDelete: SetNull)
   avaliacao    TAB_AVALIACAO? @relation(fields: [id_avaliacao], references: [id_avaliacao], onDelete: SetNull)
@@ -228,7 +224,6 @@ model TAB_ATIVIDADE {
   @@map("TAB_ATIVIDADE")
 }
 
-// ── Diário de Jogos ───────────────────────────────────────
 model TAB_DIARIO_JOGO {
   id_diario   Int      @id @default(autoincrement())
   id_usuario  Int

@@ -39,6 +39,7 @@ export type Jogo = {
   genero?:              string | null;
   plataforma?:          string | null;
   classificacao?:       string | null;
+  jogadores?:           string | null;  // v1.7
   descricao?:           string | null;
   dt_jogo:              string;
   media?:               number;
@@ -59,9 +60,11 @@ export type Avaliacao = {
   created_at:     string;
   usuario?:       UsuarioCard;
   jogo?:          Jogo;
-  likes_count?:   number;
-  comments_count?:number;
-  ja_curtiu?:     boolean;
+  likes_count?:    number;
+  dislikes_count?: number;
+  comments_count?: number;
+  ja_curtiu?:      boolean;  // mantido por compat
+  minha_reacao?:   'LIKE' | 'DISLIKE' | null; // v1.7
 };
 
 export type Comentario = {
