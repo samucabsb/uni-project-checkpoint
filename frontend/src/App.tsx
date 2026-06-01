@@ -11,7 +11,6 @@ import { Login, Register } from './pages/auth';
 import Feed                from './pages/feed/Feed';
 import Games               from './pages/games/Games';
 import GameDetails         from './pages/games/GameDetails';
-import Library             from './pages/library/Library';
 import { Lists }           from './pages/lists/Lists';
 import { ListDetails }     from './pages/lists/ListDetails';
 import Profile             from './pages/profile/Profile';
@@ -43,7 +42,6 @@ export default function App() {
         <Route path="/reviews/:id"   element={<ReviewDetails />}  />
 
         {/* Rotas privadas */}
-        <Route path="/biblioteca"    element={<Private><Library /></Private>}    />
         <Route path="/diario"        element={<Private><Diary /></Private>}      />
 
         {/* Admin */}

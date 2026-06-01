@@ -1,6 +1,8 @@
 /**
- * Diário de Jogos — v1.6
- * Histórico de múltiplas sessões por jogo (diferente da avaliação)
+ * Diário de Jogos — v1.9.2
+ * FIX v1.9.2: removida permissão de admin para editar/excluir entradas alheias
+ *   (apenas o próprio dono pode editar/excluir)
+ * Toda nova avaliação auto-cria uma entrada aqui via reviews.routes.ts
  */
 
 import { Router } from 'express';
@@ -11,7 +13,7 @@ import { parseId } from '../utils/validate';
 
 export const diaryRouter = Router();
 
-// ── GET /diary — próprio diário ───────────────────────────
+// ── GET /diary — próprio diário (privado) ─────────────────
 diaryRouter.get('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const entries = await prisma.tAB_DIARIO_JOGO.findMany({
@@ -30,7 +32,7 @@ diaryRouter.get('/user/:id', optionalAuth, async (req, res, next) => {
     if (id === null) return;
 
     const entries = await prisma.tAB_DIARIO_JOGO.findMany({
-      where:   { id_usuario: id },
+      where:   { id_usuario: id },   // filtra pelo usuário da URL, nunca pelo logado
       include: { jogo: true },
       orderBy: { data_jogada: 'desc' },
       take:    30,
@@ -69,7 +71,7 @@ diaryRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── PUT /diary/:id ────────────────────────────────────────
+// ── PUT /diary/:id — apenas o próprio dono pode editar ────
 diaryRouter.put('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -77,8 +79,10 @@ diaryRouter.put('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
 
     const entry = await prisma.tAB_DIARIO_JOGO.findUnique({ where: { id_diario: id } });
     if (!entry) return res.status(404).json({ message: 'Entrada não encontrada.' });
-    if (entry.id_usuario !== req.usuario!.id_usuario && req.usuario!.tipo_usuario !== 'ADMIN') {
-      return res.status(403).json({ message: 'Sem permissão.' });
+
+    // FIX v1.9.2: apenas o dono pode editar — removida exceção de admin
+    if (entry.id_usuario !== req.usuario!.id_usuario) {
+      return res.status(403).json({ message: 'Sem permissão para editar esta entrada.' });
     }
 
     const schema = z.object({
@@ -101,7 +105,7 @@ diaryRouter.put('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── DELETE /diary/:id ─────────────────────────────────────
+// ── DELETE /diary/:id — apenas o próprio dono pode excluir ─
 diaryRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -109,8 +113,10 @@ diaryRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res, next) =
 
     const entry = await prisma.tAB_DIARIO_JOGO.findUnique({ where: { id_diario: id } });
     if (!entry) return res.status(404).json({ message: 'Entrada não encontrada.' });
-    if (entry.id_usuario !== req.usuario!.id_usuario && req.usuario!.tipo_usuario !== 'ADMIN') {
-      return res.status(403).json({ message: 'Sem permissão.' });
+
+    // FIX v1.9.2: apenas o dono pode excluir — removida exceção de admin
+    if (entry.id_usuario !== req.usuario!.id_usuario) {
+      return res.status(403).json({ message: 'Sem permissão para excluir esta entrada.' });
     }
 
     await prisma.tAB_DIARIO_JOGO.delete({ where: { id_diario: id } });

@@ -21,8 +21,17 @@ export function Footer() {
           <div>
             <p className="meta mb-4">Navegar</p>
             <ul className="space-y-2">
-              {[{l:'Feed',to:'/feed'},{l:'Catálogo',to:'/jogos'},{l:'Listas',to:'/listas'},{l:'Biblioteca',to:'/biblioteca'}].map(({l,to}) => (
-                <li key={to}><Link to={to} className="text-sm text-zinc-400 hover:text-checkpoint-green transition-colors">{l}</Link></li>
+              {[
+                { l: 'Feed',      to: '/feed'      },
+                { l: 'Catálogo',  to: '/jogos'     },
+                { l: 'Listas',    to: '/listas'    },
+                { l: 'Diário',    to: '/diario'    },
+              ].map(({ l, to }) => (
+                <li key={to}>
+                  <Link to={to} className="text-sm text-zinc-400 hover:text-checkpoint-green transition-colors">
+                    {l}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
@@ -37,7 +46,9 @@ export function Footer() {
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-900 pt-6">
           <p className="text-xs text-zinc-600">© {year} Checkpoint · Projeto Integrador UNIEURO</p>
-          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold text-zinc-600">v1.7.0</span>
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold text-zinc-600">
+            v1.9.2
+          </span>
         </div>
       </div>
     </footer>

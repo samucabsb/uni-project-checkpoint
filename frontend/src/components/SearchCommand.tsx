@@ -18,13 +18,15 @@ export function SearchCommand() {
   const [open, setOpen]   = useState(false);
   const [idx, setIdx]     = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const debounced  = useDebounce(query, 300);
+  // FIX v1.9.2: strip "@" prefix so "@gamer_br" finds "gamer_br"
+  const searchQ    = query.startsWith('@') ? query.slice(1) : query;
+  const debounced  = useDebounce(searchQ, 300);
   const enabled    = debounced.length >= 2;
 
   // Um único request para jogos + usuários + listas
   const { data } = useQuery<SearchResult>({
     queryKey:  ['global-search', debounced],
-    queryFn:   () => api.get('/search', { params: { q: debounced } }).then(r => r.data),
+    queryFn:   () => api.get('/search', { params: { q: debounced } }).then(r => r.data), // debounced already has @ stripped
     enabled,
     staleTime: 30_000,
   });
