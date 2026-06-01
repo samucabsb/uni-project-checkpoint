@@ -1,18 +1,16 @@
 /**
- * Componentes UI — Checkpoint v1.6
- * Melhorias: onError em imagens, mobile-friendly GameCard,
- *            aria-labels, Modal com Esc, Stars refinadas
+ * Componentes UI — Checkpoint v1.9
+ * v1.9: GameCard simplificado (biblioteca removida)
  */
 
 import { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Star, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useLibraryMap } from '../hooks';
-import { Jogo, Avaliacao, StatusJogo } from '../types';
+import { Jogo, Avaliacao } from '../types';
 
 // ── Button ─────────────────────────────────────────────────
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -215,74 +213,37 @@ export function Section({ title, children, animate = true }: { title: string; ch
   );
 }
 
-// ── GameCard — mobile-friendly ────────────────────────────
-// Link sempre visível embaixo; ações rápidas no hover/focus para desktop
+// ── GameCard — limpo, sem botões de biblioteca ────────────
+// O card inteiro é um link; rating aparece no hover.
 export function GameCard({ game }: { game: Jogo }) {
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const qc        = useQueryClient();
-  const libMap    = useLibraryMap();
-  const item      = libMap.get(game.id_jogo) as StatusJogo | undefined;
-
-  async function handleStatus(status: string) {
-    if (!isAuthenticated) return toast('Faça login para usar a biblioteca.', 'info');
-    try {
-      await api.post(`/library/games/${game.id_jogo}/status`, { status });
-      toast('Biblioteca atualizada.');
-      qc.invalidateQueries({ queryKey: ['library'] });
-    } catch { toast('Erro ao atualizar biblioteca.', 'error'); }
-  }
-
-  async function handleFavorito() {
-    if (!isAuthenticated) return toast('Faça login para favoritar.', 'info');
-    try {
-      if (item?.favorito) { await api.delete(`/library/games/${game.id_jogo}/favorite`); toast('Favorito removido.'); }
-      else                { await api.post(`/library/games/${game.id_jogo}/favorite`);   toast('Favoritado!'); }
-      qc.invalidateQueries({ queryKey: ['library'] });
-    } catch { toast('Erro ao atualizar.', 'error'); }
-  }
-
   return (
-    <div className="group card card-hover relative overflow-hidden rounded-2xl">
-      {item?.favorito && (
-        <span className="pop absolute right-3 top-3 z-10 rounded-full bg-checkpoint-green p-1.5 text-black shadow-lg">
-          <Heart size={12} fill="currentColor" aria-hidden="true"/>
-        </span>
-      )}
-
+    <Link
+      to={`/jogos/${game.id_jogo}`}
+      className="group card card-hover block overflow-hidden rounded-2xl"
+    >
       <div className="relative aspect-[3/4] overflow-hidden bg-zinc-950">
-        <img src={game.img_jogo} alt={`Capa de ${game.nm_jogo}`} loading="lazy"
+        <img
+          src={game.img_jogo}
+          alt={`Capa de ${game.nm_jogo}`}
+          loading="lazy"
           onError={e => { (e.target as HTMLImageElement).src = gameImgFallback(game.nm_jogo); }}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>
-
-        {/* Overlay — hover desktop */}
-        <div className="absolute inset-0 flex flex-col justify-end gap-1.5 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <p className="text-xs font-bold text-checkpoint-green">★ {game.media || '—'}</p>
-          <Link to={`/jogos/${game.id_jogo}`}
-            className="rounded-xl bg-checkpoint-green px-3 py-2 text-center text-xs font-bold text-black">
-            Ver jogo
-          </Link>
-          <button onClick={() => handleStatus('QUERO_JOGAR')}
-            className="rounded-xl bg-zinc-800/90 px-3 py-2 text-xs font-bold hover:bg-zinc-700 transition">
-            Quero jogar
-          </button>
-          <button onClick={handleFavorito} aria-label={item?.favorito ? 'Remover favorito' : 'Favoritar'}
-            className={`flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition ${item?.favorito ? 'bg-checkpoint-green text-black' : 'bg-zinc-800/90 hover:bg-zinc-700'}`}>
-            <Heart size={12} fill={item?.favorito ? 'currentColor' : 'none'}/>
-            {item?.favorito ? 'Favoritado' : 'Favoritar'}
-          </button>
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
+        {/* Overlay com rating no hover */}
+        {game.media && (
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
+            <p className="text-sm font-black text-checkpoint-green">★ {game.media}</p>
+          </div>
+        )}
+      </div>
+      <div className="p-3">
+        <h3 className="line-clamp-2 text-sm font-black leading-snug">{game.nm_jogo}</h3>
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          {game.genero && <p className="truncate text-xs text-zinc-400">{game.genero}</p>}
+          {game.media  && <p className="flex-shrink-0 text-xs font-bold text-checkpoint-green">★ {game.media}</p>}
         </div>
       </div>
-
-      {/* Info sempre visível — funciona no mobile sem hover */}
-      <Link to={`/jogos/${game.id_jogo}`} className="block p-3 hover:bg-zinc-800/30 transition-colors">
-        <h3 className="line-clamp-2 text-sm font-black leading-snug">{game.nm_jogo}</h3>
-        <div className="mt-0.5 flex items-center justify-between">
-          {game.genero && <p className="text-xs text-zinc-400 truncate">{game.genero}</p>}
-          {game.media && <p className="text-xs font-bold text-checkpoint-green flex-shrink-0">★ {game.media}</p>}
-        </div>
-      </Link>
-    </div>
+    </Link>
   );
 }
 
@@ -292,13 +253,22 @@ export function ReviewCard({ review, showGame=true }: {
 }) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const qc        = useQueryClient();
   const isMine = user?.id_usuario === review.id_usuario;
 
-  const [likes,    setLikes]    = useState(review.likes_count    || 0);
-  const [dislikes, setDislikes] = useState(review.dislikes_count || 0);
+  const [likes,       setLikes]       = useState(review.likes_count    || 0);
+  const [dislikes,    setDislikes]    = useState(review.dislikes_count || 0);
   const [minhaReacao, setMinhaReacao] = useState<'LIKE'|'DISLIKE'|null>(
-    review.minha_reacao ?? (review.ja_curtiu ? 'LIKE' : null)
+    review.minha_reacao ?? (review.ja_curtiu ? 'LIKE' : null),
   );
+
+  // FIX v1.9: sincroniza com dados frescos quando a query pai refetch
+  // (ex: navegação para outro perfil e retorno)
+  useEffect(() => {
+    setLikes(review.likes_count    || 0);
+    setDislikes(review.dislikes_count || 0);
+    setMinhaReacao(review.minha_reacao ?? (review.ja_curtiu ? 'LIKE' : null));
+  }, [review.likes_count, review.dislikes_count, review.minha_reacao, review.ja_curtiu]);
 
   async function react(tipo: 'LIKE' | 'DISLIKE') {
     if (!isAuthenticated) return toast('Faça login para reagir.', 'info');
@@ -308,6 +278,10 @@ export function ReviewCard({ review, showGame=true }: {
       setLikes(r.data.likes_count);
       setDislikes(r.data.dislikes_count);
       setMinhaReacao(r.data.minha_reacao);
+      // FIX v1.9: invalida caches para que ao navegar de volta os dados estejam frescos
+      qc.invalidateQueries({ queryKey: ['review',  String(review.id_avaliacao)] });
+      qc.invalidateQueries({ queryKey: ['profile', String(review.id_usuario)]   });
+      if (review.id_jogo) qc.invalidateQueries({ queryKey: ['game', String(review.id_jogo)] });
     } catch { toast('Erro ao reagir.', 'error'); }
   }
 

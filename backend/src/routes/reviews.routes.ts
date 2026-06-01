@@ -151,11 +151,30 @@ reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
     const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: dados.id_jogo } });
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 
+    // Verificar se já existe avaliação (para saber se é criação ou edição)
+    const existente = await prisma.tAB_AVALIACAO.findUnique({
+      where: { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
+    });
+
     const review = await prisma.tAB_AVALIACAO.upsert({
       where:  { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
       update: { nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
       create: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo, nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
     });
+
+    // Auto-registra no diário apenas quando é uma NOVA avaliação
+    // (o diário funciona como o histórico de atividades de avaliações)
+    if (!existente) {
+      prisma.tAB_DIARIO_JOGO.create({
+        data: {
+          id_usuario:  req.usuario!.id_usuario,
+          id_jogo:     dados.id_jogo,
+          data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : new Date(),
+          nota:        dados.nota,
+          comentario:  dados.comentario ?? null,
+        },
+      }).catch(() => {}); // Falha silenciosa — o diário não deve bloquear a avaliação
+    }
 
     await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'AVALIOU_JOGO', id_jogo: dados.id_jogo, id_avaliacao: review.id_avaliacao });
     return res.status(201).json(review);

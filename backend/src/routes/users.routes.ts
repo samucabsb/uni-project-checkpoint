@@ -1,7 +1,11 @@
 /**
- * Rotas de Usuários — v1.6.1
- * CRITICAL FIX: rotas específicas (/me, /vitrine, /search) ANTES de /:id
- * Express lê rotas em ordem — /me como string casaria com /:id sem isso
+ * Rotas de Usuários — v1.9
+ * MUDANÇA v1.9: Biblioteca removida.
+ *   - status_jogos retorna apenas itens da vitrine (top_position ≠ null)
+ *   - _count inclui diario (sessões do diário)
+ *   - estatisticas removidas (eram baseadas na biblioteca)
+ *   - vitrine renomeada na resposta
+ * FIX v1.9: minha_reacao, likes_count e dislikes_count corretos nas avaliações
  */
 
 import { Router } from 'express';
@@ -34,12 +38,10 @@ usersRouter.get('/search', async (req, res, next) => {
 });
 
 // ── PUT /users/me — atualizar perfil ─────────────────────
-// Específica antes de /:id para não ser capturada como id = "me"
 usersRouter.put('/me', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const schema = z.object({
       bio_usuario: z.string().max(300).optional().nullable(),
-      // Aceita URL válida, string vazia (para limpar) ou null
       img_usuario: z.union([
         z.string().url('Informe uma URL válida para o avatar.'),
         z.literal(''),
@@ -54,7 +56,6 @@ usersRouter.put('/me', authMiddleware, async (req: AuthRequest, res, next) => {
 
     if ('bio_usuario' in dados) update.bio_usuario = dados.bio_usuario ?? null;
     if ('img_usuario' in dados) {
-      // String vazia ou null = limpar avatar
       update.img_usuario = dados.img_usuario === '' ? null : (dados.img_usuario ?? null);
     }
 
@@ -66,7 +67,8 @@ usersRouter.put('/me', authMiddleware, async (req: AuthRequest, res, next) => {
       update.senha_usuario = await bcrypt.hash(dados.senha_nova, 10);
     }
 
-    if (Object.keys(update).length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar.' });
+    if (Object.keys(update).length === 0)
+      return res.status(400).json({ message: 'Nenhum campo para atualizar.' });
 
     const atualizado = await prisma.tAB_USUARIO.update({
       where: { id_usuario: req.usuario!.id_usuario },
@@ -77,7 +79,7 @@ usersRouter.put('/me', authMiddleware, async (req: AuthRequest, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ── DELETE /users/me — excluir conta ─────────────────────
+// ── DELETE /users/me ──────────────────────────────────────
 usersRouter.delete('/me', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     await prisma.tAB_USUARIO.delete({ where: { id_usuario: req.usuario!.id_usuario } });
@@ -97,7 +99,6 @@ usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next)
     const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo } });
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 
-    // Remove qualquer jogo que já estava nessa posição (unicidade de posição)
     await prisma.tAB_STATUS_JOGO.updateMany({
       where: { id_usuario: req.usuario!.id_usuario, top_position },
       data:  { top_position: null },
@@ -110,7 +111,6 @@ usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next)
     });
 
     await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'FAVORITOU_JOGO', id_jogo });
-
     return res.status(201).json({ message: 'Vitrine atualizada.' });
   } catch (err) { next(err); }
 });
@@ -119,21 +119,18 @@ usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next)
 usersRouter.delete('/vitrine/:position', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const position = Number(req.params.position);
-    if (!Number.isInteger(position) || position < 1 || position > 4) {
+    if (!Number.isInteger(position) || position < 1 || position > 4)
       return res.status(400).json({ message: 'Posição inválida. Use 1, 2, 3 ou 4.' });
-    }
 
     await prisma.tAB_STATUS_JOGO.updateMany({
       where: { id_usuario: req.usuario!.id_usuario, top_position: position },
       data:  { top_position: null },
     });
-
     return res.json({ message: 'Jogo removido da vitrine.' });
   } catch (err) { next(err); }
 });
 
 // ── GET /users/:id — perfil público ──────────────────────
-// DEVE ficar DEPOIS de /search, /me, /vitrine (rotas específicas)
 usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -145,7 +142,7 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
         avaliacoes: {
           include: {
             jogo:    true,
-            usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } }, // FIX: inclui usuario
+            usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
             _count:  { select: { reacoes: true, comentarios: true } },
           },
           orderBy: { created_at: 'desc' },
@@ -158,11 +155,21 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
           },
           orderBy: { created_at: 'desc' },
         },
+        // Apenas itens da vitrine (top_position definido)
         status_jogos: {
+          where:   { top_position: { not: null } },
           include: { jogo: { include: { avaliacoes: { select: { nota: true } } } } },
-          orderBy: [{ top_position: 'asc' }, { updated_at: 'desc' }],
+          orderBy: [{ top_position: 'asc' }],
         },
-        _count: { select: { seguidores: true, seguindo: true, avaliacoes: true, listas: true } },
+        _count: {
+          select: {
+            seguidores: true,
+            seguindo:   true,
+            avaliacoes: true,
+            listas:     true,
+            diario:     true,  // contagem de sessões do diário
+          },
+        },
       },
     });
 
@@ -174,24 +181,37 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
         }))
       : false;
 
-    const estatisticas = {
-      zerados:     usuario.status_jogos.filter(s => s.status === 'ZERADO').length,
-      jogando:     usuario.status_jogos.filter(s => s.status === 'JOGANDO').length,
-      quero_jogar: usuario.status_jogos.filter(s => s.status === 'QUERO_JOGAR').length,
-      favoritos:   usuario.status_jogos.filter(s => s.favorito).length,
-    };
+    // Busca todas as reações das avaliações deste perfil em 1 query
+    const avIds = usuario.avaliacoes.map(a => a.id_avaliacao);
+    const likeMap    = new Map<number, number>();
+    const dislikeMap = new Map<number, number>();
+    const meusReacoes = new Map<number, string>();
+
+    if (avIds.length > 0) {
+      const todasReacoes = await prisma.tAB_REACAO_REVIEW.findMany({
+        where:  { id_avaliacao: { in: avIds } },
+        select: { id_avaliacao: true, id_usuario: true, tipo: true },
+      });
+      todasReacoes.forEach(r => {
+        if (r.tipo === 'LIKE')    likeMap.set(r.id_avaliacao,    (likeMap.get(r.id_avaliacao)    ?? 0) + 1);
+        if (r.tipo === 'DISLIKE') dislikeMap.set(r.id_avaliacao, (dislikeMap.get(r.id_avaliacao) ?? 0) + 1);
+        if (req.usuario && r.id_usuario === req.usuario.id_usuario)
+          meusReacoes.set(r.id_avaliacao, r.tipo);
+      });
+    }
 
     return res.json({
       ...sanitizeUser(usuario as unknown as Record<string, unknown>),
       isFollowing,
-      estatisticas,
       avaliacoes: usuario.avaliacoes.map(a => ({
         ...a,
-        likes_count:    a._count.reacoes,
+        likes_count:    likeMap.get(a.id_avaliacao)    ?? 0,
+        dislikes_count: dislikeMap.get(a.id_avaliacao) ?? 0,
         comments_count: a._count.comentarios,
+        minha_reacao:   meusReacoes.get(a.id_avaliacao) ?? null,
       })),
-      listas:      usuario.listas.map(l => ({ ...l, likes_count: l._count.likes })),
-      status_jogos: usuario.status_jogos.map(s => ({ ...s, jogo: calcMedia(s.jogo) })),
+      listas:  usuario.listas.map(l => ({ ...l, likes_count: l._count.likes })),
+      vitrine: usuario.status_jogos.map(s => ({ ...s, jogo: calcMedia(s.jogo) })),
     });
   } catch (err) { next(err); }
 });
@@ -201,7 +221,8 @@ usersRouter.post('/:id/follow', authMiddleware, async (req: AuthRequest, res, ne
   try {
     const id = parseId(req.params.id, res);
     if (id === null) return;
-    if (id === req.usuario!.id_usuario) return res.status(400).json({ message: 'Você não pode seguir a si mesmo.' });
+    if (id === req.usuario!.id_usuario)
+      return res.status(400).json({ message: 'Você não pode seguir a si mesmo.' });
 
     const alvo = await prisma.tAB_USUARIO.findUnique({ where: { id_usuario: id } });
     if (!alvo) return res.status(404).json({ message: 'Usuário não encontrado.' });
@@ -213,7 +234,6 @@ usersRouter.post('/:id/follow', authMiddleware, async (req: AuthRequest, res, ne
     });
 
     await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'SEGUIU_USUARIO', id_usuario_alvo: id });
-
     return res.status(201).json({ message: 'Seguindo.' });
   } catch (err) { next(err); }
 });
@@ -227,7 +247,6 @@ usersRouter.delete('/:id/unfollow', authMiddleware, async (req: AuthRequest, res
     await prisma.tAB_FOLLOW.deleteMany({
       where: { id_usuario_seguidor: req.usuario!.id_usuario, id_usuario_seguido: id },
     });
-
     return res.json({ message: 'Deixou de seguir.' });
   } catch (err) { next(err); }
 });

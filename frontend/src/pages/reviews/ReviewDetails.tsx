@@ -44,7 +44,13 @@ export default function ReviewDetails() {
     if (isMine) return toast('Você não pode reagir à sua própria avaliação.', 'info');
     try {
       const r = await api.post(`/reviews/${id}/react`, { tipo });
-      setLikes(r.data.likes_count); setDislikes(r.data.dislikes_count); setMinhaReacao(r.data.minha_reacao);
+      setLikes(r.data.likes_count);
+      setDislikes(r.data.dislikes_count);
+      setMinhaReacao(r.data.minha_reacao);
+      // FIX v1.9: invalida o cache da review para que ao voltar ao perfil/jogo os dados estejam frescos
+      qc.invalidateQueries({ queryKey: ['review', id] });
+      if (review?.id_usuario) qc.invalidateQueries({ queryKey: ['profile', String(review.id_usuario)] });
+      if (review?.id_jogo)    qc.invalidateQueries({ queryKey: ['game',    String(review.id_jogo)]    });
     } catch { toast('Erro ao reagir.', 'error'); }
   }
 
@@ -115,7 +121,7 @@ export default function ReviewDetails() {
             <button onClick={() => react('DISLIKE')} disabled={isMine} aria-label="Não curtir"
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${reacao==='DISLIKE'?'bg-red-500/10 text-red-400':'bg-zinc-800 text-zinc-400 hover:text-white disabled:cursor-default'}`}>
               <ThumbsDown size={16} fill={reacao==='DISLIKE'?'currentColor':'none'}/>
-              {reacao==='DISLIKE'?'Não gostei':'Não gostei'}{dislikeCount>0&&<span className="opacity-60">{dislikeCount}</span>}
+              {reacao==='DISLIKE'?'Descurtido':'Não curtir'}{dislikeCount>0&&<span className="opacity-60">{dislikeCount}</span>}
             </button>
             <div className="flex items-center gap-1.5 text-sm text-zinc-500"><MessageSquare size={14}/>{comentarios.length} comentário{comentarios.length!==1?'s':''}</div>
           </div>

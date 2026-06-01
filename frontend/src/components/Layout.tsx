@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { Gamepad2, LogOut, Shield, Library, Menu, X, BookOpen } from 'lucide-react';
+import { Gamepad2, LogOut, Shield, BookOpen, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Button, Avatar } from './ui';
@@ -61,10 +61,6 @@ export function Layout() {
             ))}
             {user && (
               <>
-                <NavLink to="/biblioteca" className={({ isActive }) =>
-                  `flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${isActive ? 'text-checkpoint-green' : 'text-zinc-400 hover:text-zinc-100'}`}>
-                  <Library size={14} /><span className="hidden lg:block">Biblioteca</span>
-                </NavLink>
                 <NavLink to="/diario" className={({ isActive }) =>
                   `flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${isActive ? 'text-checkpoint-green' : 'text-zinc-400 hover:text-zinc-100'}`}>
                   <BookOpen size={14} /><span className="hidden lg:block">Diário</span>
@@ -126,11 +122,6 @@ export function Layout() {
               ))}
               {user && (
                 <>
-                  <NavLink to="/biblioteca" onClick={closeMenu}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${isActive ? 'bg-checkpoint-green/10 text-checkpoint-green' : 'text-zinc-300 hover:bg-zinc-900'}`}>
-                    <Library size={16} /> Biblioteca
-                  </NavLink>
                   <NavLink to="/diario" onClick={closeMenu}
                     className={({ isActive }) =>
                       `flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${isActive ? 'bg-checkpoint-green/10 text-checkpoint-green' : 'text-zinc-300 hover:bg-zinc-900'}`}>

@@ -1,5 +1,5 @@
 /**
- * Servidor Express — Checkpoint v1.5
+ * Servidor Express — Checkpoint v1.9.2
  * SQLite local via Prisma — sem Docker
  */
 
@@ -12,7 +12,6 @@ import { routes } from './routes';
 import { errorMiddleware } from './middlewares/errorMiddleware';
 
 // ── Validação obrigatória de variáveis de ambiente ────────
-// Impede o servidor de subir sem JWT_SECRET configurado
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || JWT_SECRET.length < 20) {
   console.error('\n❌ ERRO: JWT_SECRET não configurado ou muito curto no .env\n');
@@ -33,8 +32,7 @@ app.use(cors({
 // Rate limit geral: 200 req/min por IP
 app.use(rateLimit({ windowMs: 60_000, limit: 200 }));
 
-// Rate limit específico para login: 10 tentativas/min por IP
-// Evita ataques de força bruta em /auth/login
+// Rate limit para login: 10 tentativas/min por IP
 const loginRateLimit = rateLimit({
   windowMs: 60_000,
   limit:    10,
@@ -52,7 +50,7 @@ app.use('/api', routes);
 app.use(errorMiddleware);
 
 app.listen(PORT, () => {
-  console.log(`\n🎮 Checkpoint API v1.6`);
+  console.log(`\n🎮 Checkpoint API v1.9.2`);
   console.log(`   URL:    http://localhost:${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/api/health\n`);
 });

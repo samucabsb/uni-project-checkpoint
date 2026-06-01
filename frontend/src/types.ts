@@ -1,5 +1,9 @@
 // ============================================================
-// Tipos compartilhados — Checkpoint v1.6
+// Tipos compartilhados — Checkpoint v1.9
+// Mudanças v1.9:
+//   - Usuario.status_jogos → vitrine (apenas Top 4)
+//   - Usuario._count inclui diario
+//   - Usuario.estatisticas removido (era baseado na biblioteca)
 // ============================================================
 
 export type TipoUsuario    = 'USER' | 'ADMIN';
@@ -25,11 +29,16 @@ export type Usuario = {
   bio_usuario?: string | null;
   img_usuario?: string | null;
   isFollowing?: boolean;
-  _count?:      { seguidores: number; seguindo: number; avaliacoes: number; listas: number };
+  _count?: {
+    seguidores: number;
+    seguindo:   number;
+    avaliacoes: number;
+    listas:     number;
+    diario:     number;  // v1.9: sessões do diário
+  };
   avaliacoes?:  Avaliacao[];
   listas?:      Lista[];
-  status_jogos?:StatusJogo[];
-  estatisticas?:{ zerados: number; jogando: number; quero_jogar: number; favoritos: number };
+  vitrine?:     StatusJogo[];  // v1.9: renomeado de status_jogos (apenas Top 4)
 };
 
 export type Jogo = {
@@ -39,7 +48,7 @@ export type Jogo = {
   genero?:              string | null;
   plataforma?:          string | null;
   classificacao?:       string | null;
-  jogadores?:           string | null;  // v1.7
+  jogadores?:           string | null;
   descricao?:           string | null;
   dt_jogo:              string;
   media?:               number;
@@ -63,8 +72,8 @@ export type Avaliacao = {
   likes_count?:    number;
   dislikes_count?: number;
   comments_count?: number;
-  ja_curtiu?:      boolean;  // mantido por compat
-  minha_reacao?:   'LIKE' | 'DISLIKE' | null; // v1.7
+  ja_curtiu?:      boolean;        // compat
+  minha_reacao?:   'LIKE' | 'DISLIKE' | null;
 };
 
 export type Comentario = {

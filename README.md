@@ -10,7 +10,7 @@ seguir outros jogadores e acompanhar atividades da comunidade em tempo real.
 
 ---
 
-![Version](https://img.shields.io/badge/versão-1.7.0-22c55e?style=for-the-badge)
+![Version](https://img.shields.io/badge/versão-1.9.0-22c55e?style=for-the-badge)
 ![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
 ![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-339933?style=for-the-badge)
 ![Database](https://img.shields.io/badge/banco-Prisma%20%2B%20SQLite-2d3748?style=for-the-badge)
@@ -147,8 +147,8 @@ npm --version    # deve mostrar 9.x.x ou superior
 ### 1. Extraia o projeto
 
 ```bash
-unzip checkpoint_v1_6_1.zip
-cd checkpoint_v1_6_1
+unzip checkpoint_v1_9_0.zip
+cd checkpoint_v1_9_0
 ```
 
 ### 2. Configure e inicie o backend
@@ -224,7 +224,7 @@ Criados automaticamente pelo seed (`npm run db:setup`):
 ## 📁 Estrutura de pastas
 
 ```
-checkpoint_v1_6_1/
+checkpoint_v1_9_0/
 │
 ├── backend/
 │   ├── prisma/
@@ -506,7 +506,7 @@ Certifique-se que `FRONTEND_URL=http://localhost:5173` no `.env` do backend e qu
 
 ## 📅 Changelog
 
-### v1.7.0 (atual)
+### v1.9.0 (atual)
 - **FEATURE** `BackButton` — componente global de navegação em GameDetails, ListDetails, ReviewDetails, Diary
 - **FEATURE** `GamePoster` — componente padronizado para capa de jogo (`aspect-[2/3]`, `object-top`, fallback visual)
 - **FEATURE** `useScrollTop` — scroll automático para o topo ao mudar de página

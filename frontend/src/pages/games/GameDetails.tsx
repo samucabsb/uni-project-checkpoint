@@ -1,27 +1,20 @@
 /**
- * GameDetails — v1.7
- * Layout limpo sem hero banner, GamePoster proeminente, BackButton
+ * GameDetails — v1.9
+ * Biblioteca removida: sem botões de status/favorito.
+ * O foco é avaliar o jogo e ver o que a comunidade pensa.
  */
 
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Heart, Check, BookOpen, List } from 'lucide-react';
+import { List } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useLibraryMap } from '../../hooks';
-import { Jogo, StatusJogo, StatusJogoEnum } from '../../types';
+import { Jogo } from '../../types';
 import { Stars, Button, Modal, TextArea, ReviewCard, Skeleton } from '../../components/ui';
 import { BackButton } from '../../components/BackButton';
 import { GamePoster } from '../../components/GamePoster';
-
-// "Quero jogar" removido da UI (v1.7) — mantido no banco
-const STATUS_OPTIONS: { value: StatusJogoEnum; label: string; icon: React.ReactNode }[] = [
-  { value: 'ZERADO',     label: 'Zerado',     icon: <Check size={13}/>    },
-  { value: 'JOGANDO',    label: 'Jogando',    icon: <BookOpen size={13}/> },
-  { value: 'ABANDONADO', label: 'Abandonado', icon: <span/>               },
-];
 
 function plural(n: number, s: string, p: string) { return `${n} ${n === 1 ? s : p}`; }
 
@@ -30,8 +23,6 @@ export default function GameDetails() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const qc       = useQueryClient();
-  const libMap   = useLibraryMap();
-  const item     = libMap.get(Number(id)) as StatusJogo | undefined;
 
   const [reviewModal, setReviewModal] = useState(false);
   const [reviewForm, setReviewForm]   = useState({ nota: 0, comentario: '', data_jogada: '' });
@@ -44,24 +35,6 @@ export default function GameDetails() {
     enabled:  !!id,
   });
 
-  async function handleStatus(status: StatusJogoEnum) {
-    if (!isAuthenticated) return toast('Faça login para usar a biblioteca.', 'info');
-    try {
-      await api.post(`/library/games/${id}/status`, { status });
-      qc.invalidateQueries({ queryKey: ['library'] });
-      toast('Biblioteca atualizada.');
-    } catch { toast('Erro ao atualizar.', 'error'); }
-  }
-
-  async function handleFavorito() {
-    if (!isAuthenticated) return toast('Faça login para favoritar.', 'info');
-    try {
-      if (item?.favorito) { await api.delete(`/library/games/${id}/favorite`); toast('Favorito removido.'); }
-      else                { await api.post(`/library/games/${id}/favorite`);   toast('Favoritado!'); }
-      qc.invalidateQueries({ queryKey: ['library'] });
-    } catch { toast('Erro ao atualizar.', 'error'); }
-  }
-
   async function submitReview() {
     if (!reviewForm.nota) return toast('Selecione uma nota.', 'error');
     setReviewLoading(true);
@@ -72,9 +45,16 @@ export default function GameDetails() {
         comentario:  reviewForm.comentario || null,
         data_jogada: reviewForm.data_jogada || null,
       });
-      qc.invalidateQueries({ queryKey: ['game', id] });
-      toast('Avaliação salva!');
+      // Invalida todas as queries relacionadas para dados sempre frescos
+      qc.invalidateQueries({ queryKey: ['game',      id] });
+      qc.invalidateQueries({ queryKey: ['diary'] });                                     // página /diario
+      qc.invalidateQueries({ queryKey: ['diary-user', String(user?.id_usuario)] });      // aba Diário no perfil
+      qc.invalidateQueries({ queryKey: ['profile',    String(user?.id_usuario)] });      // stats do perfil (counter diário)
+      toast(minhaReview
+        ? 'Avaliação atualizada!'
+        : 'Avaliação publicada e registrada no seu diário! 📓');
       setReviewModal(false);
+      setReviewForm({ nota: 0, comentario: '', data_jogada: '' });
     } catch { toast('Erro ao salvar avaliação.', 'error'); }
     finally { setReviewLoading(false); }
   }
@@ -84,7 +64,10 @@ export default function GameDetails() {
       <Skeleton className="h-8 w-24 rounded-xl"/>
       <Skeleton className="h-72 rounded-3xl"/>
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4"><Skeleton className="h-48 rounded-2xl"/><Skeleton className="h-32 rounded-2xl"/></div>
+        <div className="lg:col-span-2 space-y-4">
+          <Skeleton className="h-48 rounded-2xl"/>
+          <Skeleton className="h-32 rounded-2xl"/>
+        </div>
         <Skeleton className="h-48 rounded-2xl"/>
       </div>
     </div>
@@ -97,7 +80,9 @@ export default function GameDetails() {
     </div>
   );
 
-  const minhaReview = isAuthenticated ? jogo.avaliacoes?.find(a => a.id_usuario === user?.id_usuario) : null;
+  const minhaReview = isAuthenticated
+    ? jogo.avaliacoes?.find(a => a.id_usuario === user?.id_usuario)
+    : null;
 
   const reviewsOrdenadas = reviewTab === 'popular'
     ? [...(jogo.avaliacoes || [])].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
@@ -111,10 +96,9 @@ export default function GameDetails() {
     <div className="space-y-8">
       <BackButton fallback="/jogos"/>
 
-      {/* ── Card principal — sem hero banner ─────────────── */}
+      {/* ── Card principal ───────────────────────────────── */}
       <div className="card rounded-3xl p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          {/* Capa do jogo */}
           <GamePoster
             src={jogo.img_jogo}
             alt={jogo.nm_jogo}
@@ -134,7 +118,7 @@ export default function GameDetails() {
 
             <h1 className="text-2xl sm:text-3xl font-black leading-tight">{jogo.nm_jogo}</h1>
 
-            {/* Média */}
+            {/* Média da comunidade */}
             {totalAv > 0 ? (
               <div className="mt-2 flex items-center gap-3">
                 <Stars value={(jogo.media || 0) * 2} size={18}/>
@@ -142,38 +126,36 @@ export default function GameDetails() {
                 <span className="text-sm text-zinc-500">{plural(totalAv, 'avaliação', 'avaliações')}</span>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-zinc-500">Sem avaliações ainda.</p>
+              <p className="mt-2 text-sm text-zinc-500">Seja o primeiro a avaliar!</p>
             )}
 
             {jogo.descricao && (
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400 line-clamp-4">{jogo.descricao}</p>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-400 line-clamp-4">
+                {jogo.descricao}
+              </p>
             )}
-
-            {/* Ações — status + favoritar */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map(({ value, label, icon }) => (
-                <button key={value} onClick={() => handleStatus(value)}
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition ${item?.status === value ? 'bg-checkpoint-green text-black' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
-                  {icon}{label}
-                </button>
-              ))}
-              <button onClick={handleFavorito} aria-label={item?.favorito ? 'Remover favorito' : 'Favoritar'}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${item?.favorito ? 'bg-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
-                <Heart size={14} fill={item?.favorito ? 'currentColor' : 'none'}/>
-                {item?.favorito ? 'Favoritado' : 'Favoritar'}
-              </button>
-            </div>
           </div>
 
-          {/* Sua avaliação */}
+          {/* Sua avaliação / Botão avaliar */}
           <div className="flex-shrink-0">
             {minhaReview ? (
               <div className="card rounded-2xl p-4 text-center min-w-[120px]">
                 <p className="text-xs text-zinc-500 mb-1">Sua nota</p>
-                <p className="text-4xl font-black text-checkpoint-green">{(minhaReview.nota / 2).toFixed(1)}</p>
+                <p className="text-4xl font-black text-checkpoint-green">
+                  {(minhaReview.nota / 2).toFixed(1)}
+                </p>
                 <Stars value={minhaReview.nota} size={14}/>
-                <button onClick={() => { setReviewForm({ nota: minhaReview.nota, comentario: minhaReview.comentario || '', data_jogada: '' }); setReviewModal(true); }}
-                  className="mt-2 text-xs text-zinc-500 hover:text-white transition-colors">
+                <button
+                  onClick={() => {
+                    setReviewForm({
+                      nota:       minhaReview.nota,
+                      comentario: minhaReview.comentario || '',
+                      data_jogada:'',
+                    });
+                    setReviewModal(true);
+                  }}
+                  className="mt-2 text-xs text-zinc-500 hover:text-white transition-colors"
+                >
                   Editar
                 </button>
               </div>
@@ -198,8 +180,10 @@ export default function GameDetails() {
                   <div key={nota} className="flex items-center gap-2">
                     <span className="w-7 text-right text-xs text-zinc-500">{(nota / 2).toFixed(1)}</span>
                     <div className="flex-1 h-2.5 rounded-full bg-zinc-800 overflow-hidden">
-                      <div className="h-full bg-checkpoint-green rounded-full transition-all"
-                        style={{ width: `${((dist[nota] || 0) / maxDist) * 100}%` }}/>
+                      <div
+                        className="h-full bg-checkpoint-green rounded-full transition-all"
+                        style={{ width: `${((dist[nota] || 0) / maxDist) * 100}%` }}
+                      />
                     </div>
                     <span className="w-5 text-xs text-zinc-600 text-right">{dist[nota] || 0}</span>
                   </div>
@@ -208,7 +192,7 @@ export default function GameDetails() {
             </div>
           )}
 
-          {/* Avaliações */}
+          {/* Avaliações da comunidade */}
           {(jogo.avaliacoes?.length || 0) > 0 ? (
             <div>
               <div className="mb-4 flex items-center gap-3 flex-wrap">
@@ -216,7 +200,11 @@ export default function GameDetails() {
                 <div className="flex gap-1">
                   {(['recentes', 'popular'] as const).map(t => (
                     <button key={t} onClick={() => setReviewTab(t)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${reviewTab === t ? 'bg-checkpoint-green text-black' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}>
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                        reviewTab === t
+                          ? 'bg-checkpoint-green text-black'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      }`}>
                       {t === 'recentes' ? 'Recentes' : 'Mais curtidas'}
                     </button>
                   ))}
@@ -227,15 +215,23 @@ export default function GameDetails() {
                   <ReviewCard key={a.id_avaliacao} review={a} showGame={false}/>
                 ))}
                 {(jogo.avaliacoes?.length || 0) > 6 && (
-                  <p className="text-center text-sm text-zinc-500">e mais {(jogo.avaliacoes?.length || 0) - 6} avaliações</p>
+                  <p className="text-center text-sm text-zinc-500">
+                    e mais {(jogo.avaliacoes?.length || 0) - 6} avaliações
+                  </p>
                 )}
               </div>
             </div>
           ) : (
             <div className="card rounded-2xl p-8 text-center">
               <p className="font-black text-lg">Seja o primeiro a avaliar!</p>
-              <p className="mt-1 text-sm text-zinc-400">Nenhuma avaliação para {jogo.nm_jogo} ainda.</p>
-              {isAuthenticated && <Button onClick={() => setReviewModal(true)} className="mt-4">★ Avaliar agora</Button>}
+              <p className="mt-1 text-sm text-zinc-400">
+                Nenhuma avaliação para {jogo.nm_jogo} ainda.
+              </p>
+              {isAuthenticated && (
+                <Button onClick={() => setReviewModal(true)} className="mt-4">
+                  ★ Avaliar agora
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -244,12 +240,24 @@ export default function GameDetails() {
         <div className="space-y-5">
           <div className="card rounded-2xl p-5 space-y-3">
             <h3 className="font-black">Informações</h3>
-            {jogo.dt_jogo && <InfoRow label="Lançamento" value={new Date(jogo.dt_jogo).toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}/>}
+            {jogo.dt_jogo && (
+              <InfoRow
+                label="Lançamento"
+                value={new Date(jogo.dt_jogo).toLocaleDateString('pt-BR', {
+                  year: 'numeric', month: 'long', day: 'numeric',
+                })}
+              />
+            )}
             {jogo.plataforma    && <InfoRow label="Plataformas"   value={jogo.plataforma}/>}
             {jogo.genero        && <InfoRow label="Gênero"        value={jogo.genero}/>}
             {jogo.jogadores     && <InfoRow label="Jogadores"     value={jogo.jogadores}/>}
             {jogo.classificacao && <InfoRow label="Classificação" value={jogo.classificacao}/>}
-            {(jogo._count?.status_jogos || 0) > 0 && <InfoRow label="Na biblioteca de" value={plural(jogo._count!.status_jogos!, 'jogador', 'jogadores')}/>}
+            {(jogo._count?.status_jogos || 0) > 0 && (
+              <InfoRow
+                label="Vitrine de"
+                value={plural(jogo._count!.status_jogos!, 'jogador', 'jogadores')}
+              />
+            )}
           </div>
 
           {(jogo.listas_com_jogo?.length || 0) > 0 && (
@@ -262,7 +270,9 @@ export default function GameDetails() {
                   <Link key={l.id_lista} to={`/listas/${l.id_lista}`}
                     className="flex items-center justify-between rounded-xl bg-zinc-900 px-3 py-2 hover:bg-zinc-800 transition-colors">
                     <span className="text-sm font-bold truncate">{l.nm_lista}</span>
-                    <span className="text-xs text-zinc-500 flex-shrink-0 ml-2">@{l.usuario?.nm_usuario}</span>
+                    <span className="text-xs text-zinc-500 flex-shrink-0 ml-2">
+                      @{l.usuario?.nm_usuario}
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -271,25 +281,57 @@ export default function GameDetails() {
         </div>
       </div>
 
-      {/* Modal avaliar */}
-      <Modal open={reviewModal} onClose={() => setReviewModal(false)} title={minhaReview ? 'Editar avaliação' : 'Avaliar jogo'}>
+      {/* Modal — avaliar */}
+      <Modal
+        open={reviewModal}
+        onClose={() => setReviewModal(false)}
+        title={minhaReview ? 'Editar avaliação' : 'Avaliar jogo'}
+      >
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-sm text-zinc-300">Sua nota</p>
             <div className="flex items-center gap-3">
-              <Stars value={reviewForm.nota} onChange={n => setReviewForm(f => ({ ...f, nota: n }))} size={28}/>
-              {reviewForm.nota > 0 && <span className="text-2xl font-black text-checkpoint-green">{(reviewForm.nota / 2).toFixed(1)}</span>}
+              <Stars
+                value={reviewForm.nota}
+                onChange={n => setReviewForm(f => ({ ...f, nota: n }))}
+                size={28}
+              />
+              {reviewForm.nota > 0 && (
+                <span className="text-2xl font-black text-checkpoint-green">
+                  {(reviewForm.nota / 2).toFixed(1)}
+                </span>
+              )}
             </div>
           </div>
-          <TextArea label="Comentário (opcional)" value={reviewForm.comentario}
-            onChange={e => setReviewForm(f => ({ ...f, comentario: e.target.value }))} placeholder="O que você achou?"/>
+          <TextArea
+            label="Comentário (opcional)"
+            value={reviewForm.comentario}
+            onChange={e => setReviewForm(f => ({ ...f, comentario: e.target.value }))}
+            placeholder="O que você achou?"
+          />
           <div>
-            <label className="mb-2 block text-sm text-zinc-300">Data que jogou (opcional)</label>
-            <input type="date" value={reviewForm.data_jogada} max={new Date().toISOString().split('T')[0]}
+            <label className="mb-2 block text-sm text-zinc-300">
+              Data que jogou (opcional)
+            </label>
+            <input
+              type="date"
+              value={reviewForm.data_jogada}
+              max={new Date().toISOString().split('T')[0]}
               onChange={e => setReviewForm(f => ({ ...f, data_jogada: e.target.value }))}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors"/>
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 outline-none focus:border-checkpoint-green transition-colors"
+            />
           </div>
-          <Button onClick={submitReview} loading={reviewLoading} disabled={!reviewForm.nota} className="w-full">
+          {!minhaReview && (
+            <p className="text-xs text-zinc-500">
+              💡 Esta avaliação será registrada automaticamente no seu diário.
+            </p>
+          )}
+          <Button
+            onClick={submitReview}
+            loading={reviewLoading}
+            disabled={!reviewForm.nota}
+            className="w-full"
+          >
             {minhaReview ? 'Atualizar avaliação' : 'Publicar avaliação'}
           </Button>
         </div>
@@ -299,7 +341,11 @@ export default function GameDetails() {
 }
 
 function Tag({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-lg bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">{children}</span>;
+  return (
+    <span className="rounded-lg bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+      {children}
+    </span>
+  );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {

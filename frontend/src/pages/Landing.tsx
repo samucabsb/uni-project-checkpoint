@@ -71,7 +71,8 @@ export default function Landing() {
       )}
 
       {/* ── Em alta — com reveal (abaixo do fold) ────────── */}
-      {trending?.games && trending.games.length > 0 && (
+      {/* Jogos — mostra trending se disponível, senão discover como fallback */}
+      {((trending?.games?.length ?? 0) > 0 || (discover?.games?.length ?? 0) > 0) && (
         <section className="reveal space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -89,7 +90,7 @@ export default function Landing() {
       )}
 
       {/* ── Reviews populares ─────────────────────────────── */}
-      {trending?.reviews && trending.reviews.length > 0 && (
+      {((trending?.reviews?.length ?? 0) > 0 || (discover?.reviews?.length ?? 0) > 0) && (
         <section className="reveal space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black">Reviews populares</h2>
