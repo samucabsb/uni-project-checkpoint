@@ -10,7 +10,7 @@ seguir outros jogadores e acompanhar atividades da comunidade em tempo real.
 
 ---
 
-![Version](https://img.shields.io/badge/versão-1.9.0-22c55e?style=for-the-badge)
+![Version](https://img.shields.io/badge/versão-1.9.2-22c55e?style=for-the-badge)
 ![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
 ![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-339933?style=for-the-badge)
 ![Database](https://img.shields.io/badge/banco-Prisma%20%2B%20SQLite-2d3748?style=for-the-badge)
