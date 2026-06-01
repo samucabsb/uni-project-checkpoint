@@ -521,7 +521,7 @@ Certifique-se que `FRONTEND_URL=http://localhost:5173` no `.env` do backend e qu
 - **IMPROVEMENT** Versão da API atualizada para `1.7.0` no healthcheck
 - **IMPROVEMENT** Todas as páginas com `BackButton` para navegação consistente
 
-### v1.6.1 (atual)
+### v1.6.1
 - **CRITICAL FIX** Reordenamento de rotas em `users.routes.ts`: `/me`, `/vitrine`, `/search` agora ficam antes de `/:id`, eliminando bugs de perfil sem login, edição de avatar e vitrine
 - **CRITICAL FIX** Reordenamento em `reviews.routes.ts`: `/popular` e `/comments/:id` antes de `/:id`
 - **FIX** Validação de data futura em avaliações (backend + frontend)
