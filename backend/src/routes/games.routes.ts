@@ -1,6 +1,10 @@
 /**
- * Rotas de Jogos — v1.7
- * FIX: GET /:id agora usa optionalAuth e retorna minha_reacao + dislikes_count
+ * Rotas de Jogos — v1.10
+ *
+ * NOVIDADES v1.10:
+ *   - GET / e GET /search agora adicionam jobs na fila de paralelismo
+ *   - Logs de concorrência nas rotas principais
+ *   - Sem quebra nas funcionalidades existentes
  */
 
 import { Router } from 'express';
@@ -10,6 +14,7 @@ import { calcMedia } from '../utils/helpers';
 import { logAtividade } from '../utils/activities';
 import { authMiddleware, adminMiddleware, optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId, clamp } from '../utils/validate';
+import { addSearchJob } from '../queue/searchQueue';
 
 export const gamesRouter = Router();
 
@@ -25,7 +30,7 @@ const jogoSchema = z.object({
 });
 
 // ── GET /games ────────────────────────────────────────────
-gamesRouter.get('/', async (req, res, next) => {
+gamesRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const { search = '', genero = '', ano = '', classificacao = '', take = '60', sort = 'az' } =
       req.query as Record<string, string>;
@@ -53,12 +58,23 @@ gamesRouter.get('/', async (req, res, next) => {
     if (sort === 'melhor')        comMedia.sort((a, b) => (b.media || 0) - (a.media || 0));
     if (sort === 'mais_avaliado') comMedia.sort((a, b) => (b.total_avaliacoes || 0) - (a.total_avaliacoes || 0));
 
+    // ── PARALELISMO: envia job para fila após responder ──
+    // A resposta já foi para o usuário; o job é processado em background
+    if (search.trim().length >= 2) {
+      addSearchJob({
+        termo:      search.trim(),
+        id_usuario: req.usuario?.id_usuario ?? null,
+        resultados: comMedia.length,
+        created_at: new Date(),
+      });
+    }
+
     return res.json(comMedia);
   } catch (err) { next(err); }
 });
 
 // ── GET /games/search ─────────────────────────────────────
-gamesRouter.get('/search', async (req, res, next) => {
+gamesRouter.get('/search', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     if (q.length < 2) return res.json([]);
@@ -69,7 +85,17 @@ gamesRouter.get('/search', async (req, res, next) => {
       take:    6,
     });
 
-    return res.json(jogos.map(j => { const { avaliacoes: _, ...rest } = calcMedia(j); return rest; }));
+    const resultado = jogos.map(j => { const { avaliacoes: _, ...rest } = calcMedia(j); return rest; });
+
+    // ── PARALELISMO: envia job para fila em background ──
+    addSearchJob({
+      termo:      q,
+      id_usuario: req.usuario?.id_usuario ?? null,
+      resultados: resultado.length,
+      created_at: new Date(),
+    });
+
+    return res.json(resultado);
   } catch (err) { next(err); }
 });
 

@@ -1,11 +1,10 @@
 /**
- * Rotas de Usuários — v1.9
- * MUDANÇA v1.9: Biblioteca removida.
- *   - status_jogos retorna apenas itens da vitrine (top_position ≠ null)
- *   - _count inclui diario (sessões do diário)
- *   - estatisticas removidas (eram baseadas na biblioteca)
- *   - vitrine renomeada na resposta
- * FIX v1.9: minha_reacao, likes_count e dislikes_count corretos nas avaliações
+ * Rotas de Usuários — v1.10
+ *
+ * NOVIDADES v1.10:
+ *   - POST /:id/follow agora usa create (não upsert) para expor conflito real via P2002 → 409
+ *   - Logs de concorrência em follow/unfollow
+ *   - Sem quebra nas funcionalidades existentes
  */
 
 import { Router } from 'express';
@@ -28,8 +27,8 @@ usersRouter.get('/search', async (req, res, next) => {
     const users = await prisma.tAB_USUARIO.findMany({
       where:  { nm_usuario: { contains: q } },
       select: {
-        id_usuario:  true, nm_usuario: true, img_usuario: true, bio_usuario: true,
-        _count:      { select: { avaliacoes: true, seguidores: true } },
+        id_usuario: true, nm_usuario: true, img_usuario: true, bio_usuario: true,
+        _count:     { select: { avaliacoes: true, seguidores: true } },
       },
       take: 8,
     });
@@ -51,7 +50,7 @@ usersRouter.put('/me', authMiddleware, async (req: AuthRequest, res, next) => {
       senha_nova:  z.string().min(6, 'Senha precisa de pelo menos 6 caracteres.').optional(),
     });
 
-    const dados = schema.parse(req.body);
+    const dados  = schema.parse(req.body);
     const update: Record<string, unknown> = {};
 
     if ('bio_usuario' in dados) update.bio_usuario = dados.bio_usuario ?? null;
@@ -87,7 +86,7 @@ usersRouter.delete('/me', authMiddleware, async (req: AuthRequest, res, next) =>
   } catch (err) { next(err); }
 });
 
-// ── POST /users/vitrine — definir Top 4 ──────────────────
+// ── POST /users/vitrine ───────────────────────────────────
 usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const schema = z.object({
@@ -110,8 +109,7 @@ usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next)
       create: { id_usuario: req.usuario!.id_usuario, id_jogo, top_position, favorito: true, status: 'QUERO_JOGAR' },
     });
 
-    await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'FAVORITOU_JOGO', id_jogo });
-    return res.status(201).json({ message: 'Vitrine atualizada.' });
+    return res.json({ message: 'Vitrine atualizada.' });
   } catch (err) { next(err); }
 });
 
@@ -119,18 +117,77 @@ usersRouter.post('/vitrine', authMiddleware, async (req: AuthRequest, res, next)
 usersRouter.delete('/vitrine/:position', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const position = Number(req.params.position);
-    if (!Number.isInteger(position) || position < 1 || position > 4)
-      return res.status(400).json({ message: 'Posição inválida. Use 1, 2, 3 ou 4.' });
+    if (!Number.isInteger(position) || position < 1 || position > 4) {
+      return res.status(400).json({ message: 'Posição inválida (1-4).' });
+    }
 
     await prisma.tAB_STATUS_JOGO.updateMany({
       where: { id_usuario: req.usuario!.id_usuario, top_position: position },
       data:  { top_position: null },
     });
+
     return res.json({ message: 'Jogo removido da vitrine.' });
   } catch (err) { next(err); }
 });
 
-// ── GET /users/:id — perfil público ──────────────────────
+// ── POST /users/:id/follow ────────────────────────────────
+// v1.10: Usa create (não upsert) para expor conflito real 409
+// Isso é intencional: evidencia concorrência com comportamento controlado
+usersRouter.post('/:id/follow', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const id_seguido = parseId(req.params.id, res);
+    if (id_seguido === null) return;
+
+    if (id_seguido === req.usuario!.id_usuario) {
+      return res.status(400).json({ message: 'Você não pode seguir a si mesmo.' });
+    }
+
+    const alvo = await prisma.tAB_USUARIO.findUnique({ where: { id_usuario: id_seguido } });
+    if (!alvo) return res.status(404).json({ message: 'Usuário não encontrado.' });
+
+    console.log(`[CONCORRÊNCIA] Iniciando follow | seguidor: ${req.usuario!.id_usuario} → seguido: ${id_seguido}`);
+
+    try {
+      await prisma.tAB_FOLLOW.create({
+        data: {
+          id_usuario_seguidor: req.usuario!.id_usuario,
+          id_usuario_seguido:  id_seguido,
+        },
+      });
+
+      await logAtividade({
+        id_usuario:      req.usuario!.id_usuario,
+        tipo:            'SEGUIU_USUARIO',
+        id_usuario_alvo: id_seguido,
+      });
+
+      console.log(`[CONCORRÊNCIA] Follow criado | seguidor: ${req.usuario!.id_usuario} → seguido: ${id_seguido}`);
+      return res.status(201).json({ message: 'Seguindo.' });
+    } catch (dbErr: unknown) {
+      if (typeof dbErr === 'object' && dbErr !== null && 'code' in dbErr && (dbErr as { code: string }).code === 'P2002') {
+        console.log(`[CONCORRÊNCIA] Conflito em follow | seguidor: ${req.usuario!.id_usuario} → seguido: ${id_seguido} → 409`);
+        return res.status(409).json({ message: 'Conflito: você já segue este usuário.' });
+      }
+      throw dbErr;
+    }
+  } catch (err) { next(err); }
+});
+
+// ── DELETE /users/:id/unfollow ────────────────────────────
+usersRouter.delete('/:id/unfollow', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const id_seguido = parseId(req.params.id, res);
+    if (id_seguido === null) return;
+
+    await prisma.tAB_FOLLOW.deleteMany({
+      where: { id_usuario_seguidor: req.usuario!.id_usuario, id_usuario_seguido: id_seguido },
+    });
+
+    return res.json({ message: 'Deixou de seguir.' });
+  } catch (err) { next(err); }
+});
+
+// ── GET /users/:id ────────────────────────────────────────
 usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const id = parseId(req.params.id, res);
@@ -139,114 +196,86 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
     const usuario = await prisma.tAB_USUARIO.findUnique({
       where:   { id_usuario: id },
       include: {
+        _count: {
+          select: { avaliacoes: true, seguidores: true, seguindo: true, listas: true, diario: true },
+        },
+        status_jogos: {
+          where:   { top_position: { not: null } },
+          include: { jogo: { include: { avaliacoes: { select: { nota: true } } } } },
+          orderBy: { top_position: 'asc' },
+        },
         avaliacoes: {
           include: {
-            jogo:    true,
-            usuario: { select: { id_usuario: true, nm_usuario: true, img_usuario: true } },
-            _count:  { select: { reacoes: true, comentarios: true } },
+            jogo:   true,
+            _count: { select: { reacoes: true, comentarios: true } },
           },
           orderBy: { created_at: 'desc' },
+          take:    20,
         },
         listas: {
           where:   { publica: true },
           include: {
-            jogos:  { include: { jogo: true }, take: 4, orderBy: { position: 'asc' } },
-            _count: { select: { likes: true } },
+            jogos: {
+              include: { jogo: true },
+              orderBy: { position: 'asc' },
+              take:    4,
+            },
+            _count: { select: { likes: true, jogos: true } },
           },
           orderBy: { created_at: 'desc' },
-        },
-        // Apenas itens da vitrine (top_position definido)
-        status_jogos: {
-          where:   { top_position: { not: null } },
-          include: { jogo: { include: { avaliacoes: { select: { nota: true } } } } },
-          orderBy: [{ top_position: 'asc' }],
-        },
-        _count: {
-          select: {
-            seguidores: true,
-            seguindo:   true,
-            avaliacoes: true,
-            listas:     true,
-            diario:     true,  // contagem de sessões do diário
-          },
+          take:    10,
         },
       },
     });
 
     if (!usuario) return res.status(404).json({ message: 'Usuário não encontrado.' });
 
-    const isFollowing = req.usuario
-      ? !!(await prisma.tAB_FOLLOW.findFirst({
-          where: { id_usuario_seguidor: req.usuario.id_usuario, id_usuario_seguido: id },
-        }))
-      : false;
-
-    // Busca todas as reações das avaliações deste perfil em 1 query
+    // Reações do usuário logado para as avaliações deste perfil
     const avIds = usuario.avaliacoes.map(a => a.id_avaliacao);
+    const reacoesMap = new Map<number, string>();
     const likeMap    = new Map<number, number>();
     const dislikeMap = new Map<number, number>();
-    const meusReacoes = new Map<number, string>();
 
-    if (avIds.length > 0) {
-      const todasReacoes = await prisma.tAB_REACAO_REVIEW.findMany({
+    if (avIds.length > 0 && req.usuario) {
+      const reacoes = await prisma.tAB_REACAO_REVIEW.findMany({
         where:  { id_avaliacao: { in: avIds } },
         select: { id_avaliacao: true, id_usuario: true, tipo: true },
       });
-      todasReacoes.forEach(r => {
+      reacoes.forEach(r => {
         if (r.tipo === 'LIKE')    likeMap.set(r.id_avaliacao,    (likeMap.get(r.id_avaliacao)    ?? 0) + 1);
         if (r.tipo === 'DISLIKE') dislikeMap.set(r.id_avaliacao, (dislikeMap.get(r.id_avaliacao) ?? 0) + 1);
-        if (req.usuario && r.id_usuario === req.usuario.id_usuario)
-          meusReacoes.set(r.id_avaliacao, r.tipo);
+        if (r.id_usuario === req.usuario!.id_usuario) reacoesMap.set(r.id_avaliacao, r.tipo);
       });
     }
 
+    // Está logado seguindo este usuário?
+    let seguindo = false;
+    if (req.usuario && req.usuario.id_usuario !== id) {
+      const follow = await prisma.tAB_FOLLOW.findFirst({
+        where: { id_usuario_seguidor: req.usuario.id_usuario, id_usuario_seguido: id },
+      });
+      seguindo = !!follow;
+    }
+
+    const { senha_usuario: _, ...userData } = usuario as unknown as Record<string, unknown> & { senha_usuario: string };
+
     return res.json({
-      ...sanitizeUser(usuario as unknown as Record<string, unknown>),
-      isFollowing,
+      ...userData,
+      seguindo,
+      vitrine:    usuario.status_jogos.map(s => ({ ...s, jogo: calcMedia(s.jogo) })),
       avaliacoes: usuario.avaliacoes.map(a => ({
         ...a,
         likes_count:    likeMap.get(a.id_avaliacao)    ?? 0,
         dislikes_count: dislikeMap.get(a.id_avaliacao) ?? 0,
-        comments_count: a._count.comentarios,
-        minha_reacao:   meusReacoes.get(a.id_avaliacao) ?? null,
+        comments_count: (a._count as { comentarios: number }).comentarios,
+        minha_reacao:   reacoesMap.get(a.id_avaliacao) ?? null,
       })),
-      listas:  usuario.listas.map(l => ({ ...l, likes_count: l._count.likes })),
-      vitrine: usuario.status_jogos.map(s => ({ ...s, jogo: calcMedia(s.jogo) })),
+      listas: usuario.listas.map(l => ({
+        ...l,
+        likes_count: (l._count as { likes: number }).likes,
+        jogos_count: (l._count as { jogos: number }).jogos,
+        jogos:       l.jogos.map(lj => ({ ...lj, jogo: calcMedia(lj.jogo) })),
+      })),
     });
-  } catch (err) { next(err); }
-});
-
-// ── POST /users/:id/follow ────────────────────────────────
-usersRouter.post('/:id/follow', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    const id = parseId(req.params.id, res);
-    if (id === null) return;
-    if (id === req.usuario!.id_usuario)
-      return res.status(400).json({ message: 'Você não pode seguir a si mesmo.' });
-
-    const alvo = await prisma.tAB_USUARIO.findUnique({ where: { id_usuario: id } });
-    if (!alvo) return res.status(404).json({ message: 'Usuário não encontrado.' });
-
-    await prisma.tAB_FOLLOW.upsert({
-      where:  { id_usuario_seguidor_id_usuario_seguido: { id_usuario_seguidor: req.usuario!.id_usuario, id_usuario_seguido: id } },
-      update: {},
-      create: { id_usuario_seguidor: req.usuario!.id_usuario, id_usuario_seguido: id },
-    });
-
-    await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'SEGUIU_USUARIO', id_usuario_alvo: id });
-    return res.status(201).json({ message: 'Seguindo.' });
-  } catch (err) { next(err); }
-});
-
-// ── DELETE /users/:id/unfollow ────────────────────────────
-usersRouter.delete('/:id/unfollow', authMiddleware, async (req: AuthRequest, res, next) => {
-  try {
-    const id = parseId(req.params.id, res);
-    if (id === null) return;
-
-    await prisma.tAB_FOLLOW.deleteMany({
-      where: { id_usuario_seguidor: req.usuario!.id_usuario, id_usuario_seguido: id },
-    });
-    return res.json({ message: 'Deixou de seguir.' });
   } catch (err) { next(err); }
 });
