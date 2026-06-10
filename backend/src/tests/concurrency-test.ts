@@ -29,15 +29,13 @@ const USUARIOS = {
   casual_gamer: { nm_usuario: 'casual_gamer', senha_usuario: 'senha123' },
 };
 
-// ── ID do jogo usado no teste (Elden Ring = ID 4 no seed padrão) ──
-// Se o seed foi resetado, buscar o ID correto pela API
-const JOGO_TESTE_NOME = 'Elden Ring';
-const USUARIO_ALVO_NOME = 'admin'; // Para teste de follow
+const JOGO_TESTE_NOME  = 'Elden Ring';
+const USUARIO_ALVO_NOME = 'admin';
 
 // ── Utilitários ──────────────────────────────────────────────
 
 async function login(credenciais: { nm_usuario: string; senha_usuario: string }): Promise<string> {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
+  const res  = await fetch(`${BASE_URL}/auth/login`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(credenciais),
@@ -67,24 +65,36 @@ async function buscarUsuarioId(token: string, nome: string): Promise<number> {
 }
 
 async function deletarAvaliacao(token: string, idJogo: number): Promise<void> {
-  // Busca avaliação existente para deletar antes do teste
-  const res = await fetch(`${BASE_URL}/games/${idJogo}`, {
+  // Passo 1: descobre quem é o usuário deste token
+  const meRes = await fetch(`${BASE_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+  const me    = await meRes.json() as { nm_usuario: string; id_usuario: number };
+
+  // Passo 2: busca o jogo e encontra a avaliação deste usuário
+  const jogoRes = await fetch(`${BASE_URL}/games/${idJogo}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const jogo = await res.json() as {
-    avaliacoes: Array<{ id_avaliacao: number; usuario: { nm_usuario: string } }>;
+  const jogo = await jogoRes.json() as {
+    avaliacoes: Array<{ id_avaliacao: number; usuario: { id_usuario: number; nm_usuario: string } }>;
   };
 
-  // Pega o token decodificado para saber qual usuário é
-  const meRes  = await fetch(`${BASE_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-  const me     = await meRes.json() as { nm_usuario: string };
-  const minhaAv = jogo.avaliacoes.find(a => a.usuario.nm_usuario === me.nm_usuario);
+  const minhaAv = jogo.avaliacoes.find(
+    a => a.usuario.id_usuario === me.id_usuario || a.usuario.nm_usuario === me.nm_usuario
+  );
 
+  // Passo 3: deleta se existir
   if (minhaAv) {
-    await fetch(`${BASE_URL}/reviews/${minhaAv.id_avaliacao}`, {
+    const del = await fetch(`${BASE_URL}/reviews/${minhaAv.id_avaliacao}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
     });
+    if (del.ok) {
+      console.log(`  🗑️  Avaliação anterior de "${me.nm_usuario}" removida (ID ${minhaAv.id_avaliacao})`);
+    }
+  } else {
+    console.log(`  ✔️  "${me.nm_usuario}" sem avaliação prévia — banco limpo`);
   }
+
+  // Passo 4: pequena pausa para garantir que o banco processou o delete
+  await new Promise(r => setTimeout(r, 300));
 }
 
 async function deseguir(token: string, idAlvo: number): Promise<void> {
@@ -99,21 +109,23 @@ async function testarConflitoConcorrente(token: string, idJogo: number): Promise
   console.log('\n' + '='.repeat(60));
   console.log('CENÁRIO 1 — Conflito de avaliação simultânea');
   console.log('Usuário: gamer_br | Jogo: ' + JOGO_TESTE_NOME);
-  console.log('Disparando 10 requisições simultâneas...');
   console.log('='.repeat(60));
 
   // Limpar avaliação anterior (se existir)
+  console.log('Limpando avaliação anterior...');
   await deletarAvaliacao(token, idJogo);
 
-  const TOTAL = 10;
+  console.log('Disparando 10 requisições simultâneas...\n');
+
+  const TOTAL  = 10;
   const inicio = Date.now();
 
   const requests = Array.from({ length: TOTAL }).map((_, i) =>
     fetch(`${BASE_URL}/reviews`, {
       method:  'POST',
       headers: {
-        'Content-Type':  'application/json',
-        Authorization:   `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Authorization:  `Bearer ${token}`,
       },
       body: JSON.stringify({
         id_jogo:    idJogo,
@@ -161,17 +173,18 @@ async function testarMultiUsuario(
 ): Promise<void> {
   console.log('\n' + '='.repeat(60));
   console.log('CENÁRIO 2 — Múltiplos usuários diferentes, mesmo jogo');
-  console.log('gamer_br + player_one + casual_gamer → Elden Ring simultâneo');
-  console.log('Disparando 3 requisições simultâneas...');
+  console.log('gamer_br + player_one + casual_gamer → ' + JOGO_TESTE_NOME + ' simultâneo');
   console.log('='.repeat(60));
 
   // Limpar avaliações anteriores
+  console.log('Limpando avaliações anteriores...');
   await Promise.all([
     deletarAvaliacao(tokens.gamer,  idJogo),
     deletarAvaliacao(tokens.player, idJogo),
     deletarAvaliacao(tokens.casual, idJogo),
   ]);
 
+  console.log('Disparando 3 requisições simultâneas...\n');
   const inicio = Date.now();
 
   const [r1, r2, r3] = await Promise.allSettled([
@@ -192,7 +205,7 @@ async function testarMultiUsuario(
   ]);
 
   const duracao = Date.now() - inicio;
-  let sucessos = 0;
+  let sucessos  = 0;
 
   [r1, r2, r3].forEach(r => {
     if (r.status === 'fulfilled') {
@@ -218,7 +231,9 @@ async function testarFollowConcorrente(token: string, idAlvo: number): Promise<v
 
   // Limpar follow anterior
   await deseguir(token, idAlvo);
+  await new Promise(r => setTimeout(r, 200));
 
+  console.log('Disparando 5 requisições simultâneas...\n');
   const TOTAL  = 5;
   const inicio = Date.now();
 

@@ -146,9 +146,10 @@ reviewsRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
 });
 
 // ── POST /reviews ─────────────────────────────────────────
-// Comportamento: upsert (cria ou atualiza avaliação do usuário para o jogo)
-// Para teste de conflito de CRIAÇÃO: use o script concurrency-test.ts
-// (após deletar a avaliação existente, o primeiro POST vence, os demais ficam em update)
+// Comportamento v1.10:
+//   - Se NÃO existe avaliação → create puro → expõe P2002 → 409 em corrida
+//   - Se JÁ existe avaliação  → update explícito (edição normal)
+// Isso garante que múltiplas criações simultâneas resultem em 1 sucesso + N conflitos 409.
 reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const dados = avaliacaoSchema.parse(req.body);
@@ -158,17 +159,29 @@ reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
     const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: dados.id_jogo } });
     if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
 
-    // Verificar se é criação ou edição
+    // Verificar se já existe avaliação para decidir entre create e update
     const existente = await prisma.tAB_AVALIACAO.findUnique({
       where: { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
     });
 
     try {
-      const review = await prisma.tAB_AVALIACAO.upsert({
-        where:  { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
-        update: { nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
-        create: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo, nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
-      });
+      let review;
+
+      if (existente) {
+        // Edição: atualiza avaliação existente (sem conflito possível)
+        review = await prisma.tAB_AVALIACAO.update({
+          where: { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
+          data:  { nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
+        });
+        console.log(`[CONCORRÊNCIA] POST /reviews → UPDATE | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo}`);
+      } else {
+        // Criação: create puro → se duas requisições simultâneas chegarem,
+        // a segunda vai bater na unique constraint (P2002) e receber 409.
+        review = await prisma.tAB_AVALIACAO.create({
+          data: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo, nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
+        });
+        console.log(`[CONCORRÊNCIA] POST /reviews → CREATE | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo}`);
+      }
 
       if (!existente) {
         prisma.tAB_DIARIO_JOGO.create({
