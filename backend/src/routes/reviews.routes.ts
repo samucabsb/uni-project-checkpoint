@@ -15,6 +15,7 @@ import { sanitizeUser } from '../utils/helpers';
 import { logAtividade } from '../utils/activities';
 import { authMiddleware, optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId } from '../utils/validate';
+import { adquirirLock, liberarLock } from '../utils/concurrencyLock';
 
 export const reviewsRouter = Router();
 
@@ -146,67 +147,90 @@ reviewsRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
 });
 
 // ── POST /reviews ─────────────────────────────────────────
-// Comportamento v1.10:
-//   - Se NÃO existe avaliação → create puro → expõe P2002 → 409 em corrida
-//   - Se JÁ existe avaliação  → update explícito (edição normal)
-// Isso garante que múltiplas criações simultâneas resultem em 1 sucesso + N conflitos 409.
+// Estratégia v1.10 — Mutex em memória (concurrencyLock):
+//
+// Node.js é single-threaded. O Prisma com SQLite serializa
+// escritas internamente. Isso significa que requests
+// "simultâneos" via Promise.all chegam ao banco em sequência
+// — nenhuma técnica de banco (INSERT OR IGNORE, P2002) enxerga
+// duas operações ao mesmo tempo nesse contexto.
+//
+// A solução correta é garantir o conflito NA CAMADA DA APP:
+// um Set em memória rastreia quais pares (usuario+jogo) estão
+// em processamento. O segundo request para o mesmo par recebe
+// 409 imediatamente, antes de qualquer acesso ao banco.
+//
+//   adquirirLock("av:uid:jid") → false = 409 Conflict
+//   adquirirLock("av:uid:jid") → true  = prossegue
+//   liberarLock em finally     = garante liberação
 reviewsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const dados = avaliacaoSchema.parse(req.body);
+    const uid   = req.usuario!.id_usuario;
+    const chave = `av:${uid}:${dados.id_jogo}`;
 
-    console.log(`[CONCORRÊNCIA] Iniciando POST /reviews | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo}`);
+    console.log(`[CONCORRÊNCIA] Iniciando POST /reviews | user: ${uid} | jogo: ${dados.id_jogo}`);
 
-    const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: dados.id_jogo } });
-    if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
-
-    // Verificar se já existe avaliação para decidir entre create e update
-    const existente = await prisma.tAB_AVALIACAO.findUnique({
-      where: { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
-    });
+    // Tenta adquirir o lock para este par (usuario, jogo)
+    if (!adquirirLock(chave)) {
+      console.log(`[CONCORRÊNCIA] 409 — lock ocupado | user: ${uid} | jogo: ${dados.id_jogo}`);
+      return res.status(409).json({ message: 'Conflito: avaliação já está sendo processada para este jogo.' });
+    }
 
     try {
+      const jogo = await prisma.tAB_JOGOS.findUnique({ where: { id_jogo: dados.id_jogo } });
+      if (!jogo) return res.status(404).json({ message: 'Jogo não encontrado.' });
+
+      const existente = await prisma.tAB_AVALIACAO.findUnique({
+        where: { id_usuario_id_jogo: { id_usuario: uid, id_jogo: dados.id_jogo } },
+      });
+
       let review;
 
       if (existente) {
-        // Edição: atualiza avaliação existente (sem conflito possível)
+        // Edição legítima — atualiza
         review = await prisma.tAB_AVALIACAO.update({
-          where: { id_usuario_id_jogo: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo } },
-          data:  { nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
+          where: { id_usuario_id_jogo: { id_usuario: uid, id_jogo: dados.id_jogo } },
+          data:  {
+            nota:        dados.nota,
+            comentario:  dados.comentario ?? null,
+            data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null,
+          },
         });
-        console.log(`[CONCORRÊNCIA] POST /reviews → UPDATE | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo}`);
+        console.log(`[CONCORRÊNCIA] POST /reviews → UPDATE | user: ${uid} | jogo: ${dados.id_jogo}`);
       } else {
-        // Criação: create puro → se duas requisições simultâneas chegarem,
-        // a segunda vai bater na unique constraint (P2002) e receber 409.
+        // Criação — lock garante que só uma chega aqui
         review = await prisma.tAB_AVALIACAO.create({
-          data: { id_usuario: req.usuario!.id_usuario, id_jogo: dados.id_jogo, nota: dados.nota, comentario: dados.comentario ?? null, data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null },
+          data: {
+            id_usuario:  uid,
+            id_jogo:     dados.id_jogo,
+            nota:        dados.nota,
+            comentario:  dados.comentario ?? null,
+            data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : null,
+          },
         });
-        console.log(`[CONCORRÊNCIA] POST /reviews → CREATE | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo}`);
-      }
 
-      if (!existente) {
         prisma.tAB_DIARIO_JOGO.create({
           data: {
-            id_usuario:  req.usuario!.id_usuario,
+            id_usuario:  uid,
             id_jogo:     dados.id_jogo,
             data_jogada: dados.data_jogada ? new Date(dados.data_jogada) : new Date(),
             nota:        dados.nota,
             comentario:  dados.comentario ?? null,
           },
         }).catch(() => {});
+
+        await logAtividade({ id_usuario: uid, tipo: 'AVALIOU_JOGO', id_jogo: dados.id_jogo, id_avaliacao: review.id_avaliacao });
+        console.log(`[CONCORRÊNCIA] POST /reviews → CREATE | user: ${uid} | jogo: ${dados.id_jogo}`);
       }
 
-      await logAtividade({ id_usuario: req.usuario!.id_usuario, tipo: 'AVALIOU_JOGO', id_jogo: dados.id_jogo, id_avaliacao: review.id_avaliacao });
-
-      console.log(`[CONCORRÊNCIA] POST /reviews concluído | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo} | ação: ${existente ? 'UPDATE' : 'CREATE'}`);
       return res.status(201).json(review);
-    } catch (dbErr: unknown) {
-      // Captura explícita de conflito de constraint única (corrida entre criações)
-      if (typeof dbErr === 'object' && dbErr !== null && 'code' in dbErr && (dbErr as { code: string }).code === 'P2002') {
-        console.log(`[CONCORRÊNCIA] Conflito detectado em POST /reviews | user: ${req.usuario!.id_usuario} | jogo: ${dados.id_jogo} → 409`);
-        return res.status(409).json({ message: 'Conflito: avaliação já existe para este jogo.' });
-      }
-      throw dbErr;
+
+    } finally {
+      // Garante liberação do lock mesmo em caso de erro
+      liberarLock(chave);
     }
+
   } catch (err) { next(err); }
 });
 
