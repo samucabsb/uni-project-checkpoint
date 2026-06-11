@@ -1,367 +1,301 @@
 <div align="center">
 
-# 🎮 Checkpoint
+# 🎮 Checkpoint v1.10.4
 
-**Uma rede social para gamers avaliarem, organizarem e descobrirem jogos.**
+**Rede social para gamers avaliarem, organizarem e descobrirem jogos.**
 
-Inspirado no modelo social do Letterboxd, o Checkpoint permite registrar sua jornada gamer,
-avaliar jogos com meia estrela, criar listas temáticas, montar uma vitrine de favoritos,
-seguir outros jogadores e acompanhar atividades da comunidade em tempo real.
-
----
-
-![Version](https://img.shields.io/badge/versão-1.10.0-22c55e?style=for-the-badge)
-![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb?style=for-the-badge)
-![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20Express-339933?style=for-the-badge)
-![Database](https://img.shields.io/badge/banco-Prisma%20%2B%20SQLite-2d3748?style=for-the-badge)
-![TypeScript](https://img.shields.io/badge/linguagem-TypeScript-3178c6?style=for-the-badge)
-![Status](https://img.shields.io/badge/status-Fase%202%20Paralela-22c55e?style=for-the-badge)
-
-**UNIEURO — Projeto Integrador de Computação Paralela**  
-Samuel · Vinícius · Ana Júlia  
-Prof. Jorge Osvaldo A. L. Torres
+Projeto Integrador de Computação Paralela — UNIEURO  
+Samuel · Vinícius · Ana Júlia
 
 </div>
 
 ---
 
-## 📋 Índice
+## Sobre o projeto
 
-- [Sobre o projeto](#-sobre-o-projeto)
-- [Novidades v1.10 — Concorrência e Paralelismo](#-novidades-v110--concorrência-e-paralelismo)
-- [Arquitetura](#-arquitetura)
-- [Instalação e execução](#-instalação-e-execução)
-- [Scripts disponíveis](#-scripts-disponíveis)
-- [Usuários de teste](#-usuários-de-teste)
-- [Testando concorrência](#-testando-concorrência)
-- [Testando paralelismo](#-testando-paralelismo)
-- [Rotas da API](#-rotas-da-api)
-- [Banco de dados](#-banco-de-dados)
-- [Variáveis de ambiente](#-variáveis-de-ambiente)
-- [Evidências para apresentação](#-evidências-para-apresentação)
+O **Checkpoint** é uma rede social de jogos inspirada no modelo do Letterboxd. O sistema permite autenticação, catálogo de jogos, avaliações, listas, diário, vitrine de favoritos, follow entre usuários e feed social.
+
+A versão **v1.10.4** fortalece a entrega de Computação Paralela com:
+
+- concorrência validada com múltiplas requisições simultâneas;
+- conflito real tratado com `409 Conflict`;
+- fila persistente em banco de dados;
+- worker executado em processo separado;
+- logs e evidências repetíveis para apresentação.
 
 ---
 
-## 🎯 Sobre o projeto
+## Arquitetura
 
-O **Checkpoint** nasceu como projeto integrador da UNIEURO com o objetivo de unir desenvolvimento full stack com um produto que simule o mercado real. A inspiração principal é o [Letterboxd](https://letterboxd.com/) — uma rede social para cinema — adaptada para o universo dos videogames.
+```text
+Frontend React/Vite/TypeScript
+        ↓ HTTP + JWT
+Backend Express/TypeScript
+        ↓ Prisma
+SQLite/PostgreSQL
+```
+
+### Concorrência
+
+```text
+Múltiplas requisições simultâneas
+        ↓
+POST /reviews ou POST /users/:id/follow
+        ↓
+Constraint única no banco
+        ↓
+1 sucesso + conflitos 409
+        ↓
+Dados permanecem consistentes
+```
+
+### Paralelismo/distribuição mínima v1.10.4
+
+```text
+Terminal 1 — API Express
+GET /api/games/search?q=atomic
+        ↓
+API responde ao usuário
+        ↓
+Job salvo em TAB_FILA_BUSCA
+
+Terminal 2 — Worker separado
+Lê TAB_FILA_BUSCA
+        ↓
+PENDENTE → PROCESSANDO → CONCLUIDO
+        ↓
+Registra métrica em TAB_BUSCA_JOGO
+```
+
+A comunicação entre API e worker acontece pela tabela persistente `TAB_FILA_BUSCA`. Isso evita fila apenas em memória e permite evidência real no banco.
 
 ---
 
-## 🆕 Novidades v1.10 — Concorrência e Paralelismo
+## Requisitos
 
-### Concorrência validada
-
-| Cenário | Rota | Comportamento |
-|---|---|---|
-| Avaliação duplicada | `POST /reviews` | `409 Conflict` com mensagem clara |
-| Follow duplicado | `POST /users/:id/follow` | `409 Conflict` com mensagem clara |
-| Multi-usuário simultâneo | `POST /reviews` | Todos os usuários conseguem criar suas próprias avaliações |
-
-**Logs gerados automaticamente:**
-```
-[CONCORRÊNCIA] Iniciando POST /reviews | user: 2 | jogo: 4
-[CONCORRÊNCIA] POST /reviews concluído | user: 2 | jogo: 4 | ação: CREATE
-[CONCORRÊNCIA] Conflito detectado em POST /reviews | user: 2 | jogo: 4 → 409
-[CONCORRÊNCIA] Iniciando follow | seguidor: 2 → seguido: 1
-[CONCORRÊNCIA] Conflito em follow | seguidor: 2 → seguido: 1 → 409
-```
-
-### Paralelismo implementado
-
-**Arquitetura fila + worker (desacoplada da requisição HTTP):**
-
-```
-Usuário pesquisa jogo
-        ↓
-GET /api/games?search=elden
-        ↓
-Backend responde imediatamente com os jogos   ← Usuário já recebeu a resposta
-        ↓
-addSearchJob() → fila em memória              ← Execução paralela começa aqui
-        ↓
-searchWorker (setInterval 1s)                 ← Worker independente
-        ↓
-prisma.tAB_BUSCA_JOGO.create()                ← Persiste métricas no banco
-```
-
-**Logs gerados automaticamente:**
-```
-[QUEUE]  Job adicionado | termo: "Elden Ring" | fila: 1 | total: 1
-[WORKER] ⚙️  Processando | termo: "Elden Ring" | resultados: 1 | fila restante: 0
-[WORKER] ✅ Busca registrada | termo: "Elden Ring" | usuário: 2
-```
+- Node.js 20+
+- npm
+- Prisma
+- SQLite em desenvolvimento
 
 ---
 
-## 📐 Arquitetura
-
-```
-Frontend (React/Vite)
-        ↓ HTTP (Axios + JWT)
-Backend (Express/TypeScript)
-    ├── routes/
-    │   ├── games.routes.ts      → busca de jogos + addSearchJob()
-    │   ├── reviews.routes.ts    → avaliações + logs concorrência
-    │   └── users.routes.ts      → follow + 409 em conflito
-    │
-    ├── queue/
-    │   └── searchQueue.ts       → fila FIFO em memória (Producer)
-    │
-    ├── workers/
-    │   └── searchWorker.ts      → worker background setInterval (Consumer)
-    │
-    └── prisma/
-        └── schema.prisma        → TAB_BUSCA_JOGO (nova em v1.10)
-                ↓
-        SQLite (dev.db)
-```
-
-**Separação de responsabilidades (Pilar 4 — Distribuição):**
-- `routes/` — camada HTTP, responde ao usuário
-- `queue/` — fila desacoplada
-- `workers/` — processamento em background, independente das requisições
-
----
-
-## 🚀 Instalação e execução
-
-### 1. Extraia o projeto
-
-```bash
-unzip checkpoint_v1_10.zip
-cd checkpoint_v1_10
-```
-
-### 2. Configure e inicie o backend
+## Instalação
 
 ```bash
 cd backend
-
-# Instala dependências
 npm install
-
-# OBRIGATÓRIO — gera o cliente Prisma (necessário após mudança no schema)
 npx prisma generate
-
-# Cria o banco SQLite + nova tabela TAB_BUSCA_JOGO + popula com dados de teste
 npm run db:setup
-
-# Inicia o servidor em modo desenvolvimento (hot-reload)
 npm run dev
-# → API rodando em http://localhost:3333
-# → Worker de paralelismo iniciado automaticamente
 ```
 
-### 3. Configure e inicie o frontend (novo terminal)
+Em outro terminal:
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# → App rodando em http://localhost:5173
 ```
 
-Acesse: **[http://localhost:5173](http://localhost:5173)**
+---
+
+## Execução em desenvolvimento
+
+### Terminal 1 — API
+
+```bash
+cd backend
+npm run dev:api
+```
+
+API disponível em:
+
+```text
+http://localhost:3333
+```
+
+### Terminal 2 — Worker
+
+```bash
+cd backend
+npm run dev:worker
+```
+
+O worker consome jobs da `TAB_FILA_BUSCA` e grava métricas em `TAB_BUSCA_JOGO`.
+
+### Terminal 3 — Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend disponível em:
+
+```text
+http://localhost:5173
+```
 
 ---
 
-## 📜 Scripts disponíveis
+## Scripts do backend
 
-### Backend (`/backend`)
+```bash
+npm run dev              # API em modo desenvolvimento
+npm run dev:api          # API em modo desenvolvimento
+npm run dev:worker       # Worker separado em modo desenvolvimento
+npm run build            # Compila TypeScript
+npm start                # Executa API compilada
+npm run start:worker     # Executa worker compilado
+npm run db:setup         # Sincroniza schema e popula seed
+npm run db:reset         # Reseta banco e popula seed
+npm run db:studio        # Abre Prisma Studio
+npm run test:concurrency # Executa testes de concorrência
+```
 
-| Script | Comando interno | Descrição |
+---
+
+## Variáveis de ambiente
+
+Crie `backend/.env`:
+
+```env
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="checkpoint_v1_10_4_secret_minimo_32_chars_ok"
+JWT_EXPIRES_IN="7d"
+PORT=3333
+FRONTEND_URL="http://localhost:5173"
+SEARCH_WORKER_INTERVAL_MS=1000
+```
+
+---
+
+## Usuários de teste
+
+| Usuário | Senha | Tipo |
 |---|---|---|
-| `npm run dev` | `tsx watch src/server.ts` | Servidor com hot-reload + worker automático |
-| `npm run build` | `tsc` | Compila TypeScript |
-| `npm start` | `node dist/server.js` | Inicia build de produção |
-| `npm run db:setup` | `prisma db push && tsx prisma/importData.ts` | Cria banco + popula seed |
-| `npm run db:reset` | `prisma db push --force-reset && tsx prisma/importData.ts` | Reseta e repopula |
-| `npm run db:studio` | `prisma studio` | Interface visual do banco em localhost:5555 |
-| `npm run test:concurrency` | `tsx src/tests/concurrency-test.ts` | **Suite completa de testes de concorrência** |
-
-### Frontend (`/frontend`)
-
-| Script | Comando interno | Descrição |
-|---|---|---|
-| `npm run dev` | `vite` | Dev server com HMR |
-| `npm run build` | `tsc && vite build` | Build de produção em `/dist` |
-| `npm run preview` | `vite preview` | Preview do build local |
+| `admin` | `admin123` | Admin |
+| `gamer_br` | `senha123` | Usuário |
+| `player_one` | `senha123` | Usuário |
+| `casual_gamer` | `senha123` | Usuário |
 
 ---
 
-## 👤 Usuários de teste
+## Teste de concorrência
 
-| Usuário | Senha | Tipo | Observações |
-|---|---|---|---|
-| `admin` | `admin123` | 🛡️ Admin | Acesso ao painel admin |
-| `gamer_br` | `senha123` | Usuário | 6 avaliações, vitrine completa |
-| `player_one` | `senha123` | Usuário | Especialista em FPS e indies |
-| `casual_gamer` | `senha123` | Usuário | Gosta de histórias |
-
----
-
-## 🧪 Testando concorrência
-
-### Método 1 — Script automatizado (recomendado para evidência)
+Execute com a API rodando:
 
 ```bash
 cd backend
 npm run test:concurrency
 ```
 
-**Output esperado:**
-```
-============================================================
-CENÁRIO 1 — Conflito de avaliação simultânea
-Usuário: gamer_br | Jogo: Elden Ring
-Disparando 10 requisições simultâneas...
-============================================================
-  [1] ✅ 201 — Avaliação criada
-  [2] ⚠️  409 — Conflito detectado (esperado)
-  [3] ⚠️  409 — Conflito detectado (esperado)
-  ...
-📊 Resultado:
-   Sucessos (201/200): 1
-   Conflitos (409):    9
-   Duração:            ~50ms
-✅ CONSISTÊNCIA MANTIDA
-```
+Cenários validados:
 
-### Método 2 — Visual com navegadores (para apresentação ao vivo)
+1. **10 avaliações simultâneas do mesmo usuário para o mesmo jogo**  
+   Resultado esperado: `1` sucesso e `9` conflitos `409`.
 
-1. Abra 3 navegadores/abas anônimas
-2. Logue com `gamer_br`, `player_one` e `casual_gamer`
-3. Todos acessam a página do Elden Ring simultaneamente
-4. Avaliam o jogo ao mesmo tempo
-5. Observe o comportamento no terminal do backend
+2. **3 usuários diferentes avaliando o mesmo jogo simultaneamente**  
+   Resultado esperado: `3` sucessos.
+
+3. **5 follows simultâneos para o mesmo perfil**  
+   Resultado esperado: `1` sucesso e `4` conflitos `409`.
+
+A consistência é garantida por constraints no banco e tratamento explícito de `P2002 → 409 Conflict`.
 
 ---
 
-## ⚡ Testando paralelismo
+## Teste de paralelismo
 
-### Verificar worker em ação
-
-1. Inicie o backend (`npm run dev`)
-2. Observe no terminal:
-   ```
-   [WORKER] 🚀 Worker de busca iniciado — processando a cada 1s
-   ```
-3. Faça uma busca no frontend (campo de pesquisa)
-4. Observe os logs:
-   ```
-   [QUEUE]  Job adicionado | termo: "Elden" | fila: 1
-   [WORKER] ⚙️  Processando | termo: "Elden" | resultados: 3
-   [WORKER] ✅ Busca registrada | termo: "Elden" | usuário: 2
-   ```
-
-### Verificar métricas no banco
+1. Rode a API:
 
 ```bash
-npm run db:studio
-# Abra http://localhost:5555
-# Navegue até TAB_BUSCA_JOGO
-# Veja os registros sendo criados em tempo real
+npm run dev:api
 ```
 
-### Verificar estatísticas da fila via API
+2. Rode o worker em outro terminal:
 
+```bash
+npm run dev:worker
 ```
+
+3. Faça uma busca no frontend ou via API:
+
+```text
+GET http://localhost:3333/api/games/search?q=atomic
+```
+
+4. Verifique logs esperados:
+
+```text
+[QUEUE] Job persistido | id: 1 | termo: "atomic" | status: PENDENTE
+[WORKER] Job capturado | id: 1 | termo: "atomic"
+[WORKER] Job concluído | id: 1 | destino: TAB_BUSCA_JOGO
+```
+
+5. Consulte estatísticas:
+
+```text
 GET http://localhost:3333/api/queue/stats
 ```
 
-Resposta:
+Exemplo:
+
 ```json
 {
   "pendentes": 0,
-  "adicionados": 5,
+  "processando": 0,
   "processados": 5,
-  "timestamp": "2026-06-09T20:00:00.000Z"
+  "erros": 0,
+  "adicionados": 5
 }
 ```
 
+6. Abra o Prisma Studio:
+
+```bash
+npm run db:studio
+```
+
+Verifique:
+
+- `TAB_FILA_BUSCA`: jobs e status da fila;
+- `TAB_BUSCA_JOGO`: métricas processadas pelo worker.
+
 ---
 
-## 🗄️ Banco de dados
+## Banco de dados
 
-### Diagrama
+Tabelas relevantes para Computação Paralela:
 
-```
-TAB_USUARIO ──┬── TAB_AVALIACAO ──── TAB_REACAO_REVIEW
-              │                  └── TAB_COMENTARIO_REVIEW
-              ├── TAB_LISTA ──────── TAB_LISTA_JOGO ── TAB_JOGOS
-              │               └──── TAB_LIKE_LISTA
-              ├── TAB_STATUS_JOGO ── TAB_JOGOS
-              ├── TAB_FOLLOW
-              ├── TAB_ATIVIDADE
-              ├── TAB_DIARIO_JOGO ── TAB_JOGOS
-              └── TAB_BUSCA_JOGO    ← NOVA v1.10 (worker de paralelismo)
-```
-
-### Nova tabela v1.10
-
-| Tabela | Descrição |
+| Tabela | Função |
 |---|---|
-| `TAB_BUSCA_JOGO` | Métricas de buscas processadas pelo worker em background |
+| `TAB_AVALIACAO` | Avaliações com constraint única por usuário/jogo |
+| `TAB_FOLLOW` | Relação seguidor/seguido com chave composta |
+| `TAB_FILA_BUSCA` | Fila persistente de jobs de busca |
+| `TAB_BUSCA_JOGO` | Métricas finais processadas pelo worker |
 
 ---
 
-## ⚙️ Variáveis de ambiente
+## Evidências para apresentação
 
-```env
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="checkpoint_v1_10_secret_minimo_32_chars_ok"
-JWT_EXPIRES_IN="7d"
-PORT=3333
-FRONTEND_URL="http://localhost:5173"
-```
+Mostrar ao professor:
 
----
-
-## 📊 Evidências para apresentação
-
-### O que mostrar ao professor
-
-| Momento | O que mostrar | Onde ver |
-|---|---|---|
-| Funcionalidade | Sistema rodando, fluxo completo | Navegador |
-| Arquitetura | Diagrama de componentes | Este README / slide |
-| Concorrência | Script `npm run test:concurrency` | Terminal |
-| Paralelismo | Worker logs durante busca | Terminal |
-| Distribuição | Fila separada do handler HTTP | Código `queue/` e `workers/` |
-| Banco | `TAB_BUSCA_JOGO` populada pelo worker | Prisma Studio |
-| Stats | `GET /api/queue/stats` | Navegador/Insomnia |
-
-### Roteiro sugerido (7 pontos do professor)
-
-1. **Objetivo** — "Rede social para gamers, inspirada no Letterboxd"
-2. **Arquitetura** — mostrar o diagrama acima
-3. **Sistema rodando** — abrir o frontend, fazer login
-4. **Fluxo principal** — avaliar um jogo, criar lista, seguir usuário
-5. **Concorrência ao vivo** — `npm run test:concurrency` no terminal
-6. **Paralelismo** — buscar um jogo e mostrar os `[QUEUE]` e `[WORKER]` logs
-7. **Evidência de teste** — mostrar `TAB_BUSCA_JOGO` no Prisma Studio + output do script
+1. sistema rodando no navegador;
+2. fluxo principal: login → buscar jogo → avaliar → feed;
+3. terminal com `npm run test:concurrency`;
+4. terminal da API com `[QUEUE] Job persistido`;
+5. terminal do worker com `[WORKER] Job capturado` e `[WORKER] Job concluído`;
+6. Prisma Studio mostrando `TAB_FILA_BUSCA` e `TAB_BUSCA_JOGO`;
+7. `GET /api/queue/stats` com contadores reais.
 
 ---
 
-## 📝 Changelog
+## Observações técnicas
 
-### v1.10.0 — Computação Paralela (atual)
-- ✅ `searchQueue.ts` — fila FIFO em memória (Producer)
-- ✅ `searchWorker.ts` — worker background com `setInterval` (Consumer)
-- ✅ `TAB_BUSCA_JOGO` — nova tabela de métricas de busca
-- ✅ `concurrency-test.ts` — suite de 3 cenários de teste repetíveis
-- ✅ `POST /reviews` — logs de concorrência + captura explícita P2002 → 409
-- ✅ `POST /users/:id/follow` — usa `create` em vez de `upsert` para expor conflito
-- ✅ `GET /api/queue/stats` — endpoint de diagnóstico da fila
-- ✅ `npm run test:concurrency` — script de teste via npm
-- ✅ Logs prefixados: `[QUEUE]`, `[WORKER]`, `[CONCORRÊNCIA]`
-
-### v1.9.2
-- FIX: admin não pode mais editar/excluir entradas de diário alheias
-
-### v1.9.0 – v1.7.0
-- Reações (LIKE/DISLIKE), diário, campo jogadores, busca global
-
-### v1.6.x
-- Base: autenticação JWT, feed social, vitrine, listas, avaliações
+- A fila não é mais um array em memória.
+- A API e o worker rodam em processos separados.
+- A requisição principal não depende da gravação da métrica.
+- A concorrência crítica continua protegida por constraints no banco.
+- Em produção, a `TAB_FILA_BUSCA` poderia evoluir para Redis, BullMQ ou RabbitMQ sem mudar o contrato das rotas.

@@ -140,7 +140,12 @@ listsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
     });
     const dados = schema.parse(req.body);
     const lista = await prisma.tAB_LISTA.create({
-      data: { id_usuario: req.usuario!.id_usuario, ...dados },
+      data: {
+        nm_lista: dados.nm_lista,
+        descricao: dados.descricao ?? null,
+        publica:   dados.publica,
+        usuario:   { connect: { id_usuario: req.usuario!.id_usuario } },
+      },
     });
 
     await logAtividade({

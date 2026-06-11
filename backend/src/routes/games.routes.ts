@@ -1,5 +1,5 @@
 /**
- * Rotas de Jogos — v1.10
+ * Rotas de Jogos — v1.10.4
  *
  * NOVIDADES v1.10:
  *   - GET / e GET /search agora adicionam jobs na fila de paralelismo
@@ -14,9 +14,16 @@ import { calcMedia } from '../utils/helpers';
 import { logAtividade } from '../utils/activities';
 import { authMiddleware, adminMiddleware, optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { parseId, clamp } from '../utils/validate';
-import { addSearchJob } from '../queue/searchQueue';
+import { addSearchJob, type SearchJob } from '../queue/searchQueue';
 
 export const gamesRouter = Router();
+
+function enqueueSearchMetric(job: SearchJob): void {
+  void addSearchJob(job).catch(error => {
+    console.error('[QUEUE] Falha ao persistir job de busca:', error);
+  });
+}
+
 
 const jogoSchema = z.object({
   nm_jogo:       z.string().min(2).max(100),
@@ -58,10 +65,13 @@ gamesRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
     if (sort === 'melhor')        comMedia.sort((a, b) => (b.media || 0) - (a.media || 0));
     if (sort === 'mais_avaliado') comMedia.sort((a, b) => (b.total_avaliacoes || 0) - (a.total_avaliacoes || 0));
 
-    // ── PARALELISMO: envia job para fila após responder ──
-    // A resposta já foi para o usuário; o job é processado em background
+    res.json(comMedia);
+
+    // ── PARALELISMO v1.10.4 ───────────────────────────────
+    // A resposta HTTP já foi enviada; a métrica é apenas enfileirada.
+    // O worker separado consome TAB_FILA_BUSCA em background.
     if (search.trim().length >= 2) {
-      addSearchJob({
+      enqueueSearchMetric({
         termo:      search.trim(),
         id_usuario: req.usuario?.id_usuario ?? null,
         resultados: comMedia.length,
@@ -69,7 +79,7 @@ gamesRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
       });
     }
 
-    return res.json(comMedia);
+    return;
   } catch (err) { next(err); }
 });
 
@@ -87,15 +97,18 @@ gamesRouter.get('/search', optionalAuth, async (req: AuthRequest, res, next) => 
 
     const resultado = jogos.map(j => { const { avaliacoes: _, ...rest } = calcMedia(j); return rest; });
 
-    // ── PARALELISMO: envia job para fila em background ──
-    addSearchJob({
+    res.json(resultado);
+
+    // ── PARALELISMO v1.10.4 ───────────────────────────────
+    // Enfileira a métrica sem bloquear a resposta da busca.
+    enqueueSearchMetric({
       termo:      q,
       id_usuario: req.usuario?.id_usuario ?? null,
       resultados: resultado.length,
       created_at: new Date(),
     });
 
-    return res.json(resultado);
+    return;
   } catch (err) { next(err); }
 });
 
@@ -196,7 +209,17 @@ gamesRouter.post('/', authMiddleware, adminMiddleware, async (req: AuthRequest, 
     if (existente) return res.status(409).json({ message: 'Já existe um jogo com esse nome.' });
 
     const jogo = await prisma.tAB_JOGOS.create({
-      data: { ...dados, dt_jogo: new Date(dados.dt_jogo), id_usuario: req.usuario!.id_usuario },
+      data: {
+        nm_jogo:       dados.nm_jogo,
+        img_jogo:      dados.img_jogo,
+        genero:        dados.genero ?? null,
+        plataforma:    dados.plataforma ?? null,
+        classificacao: dados.classificacao ?? null,
+        jogadores:     dados.jogadores ?? null,
+        descricao:     dados.descricao ?? null,
+        dt_jogo:       new Date(dados.dt_jogo),
+        id_usuario:    req.usuario!.id_usuario,
+      },
     });
     return res.status(201).json(jogo);
   } catch (err) { next(err); }

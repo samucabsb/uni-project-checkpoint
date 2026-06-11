@@ -1,18 +1,30 @@
 /**
- * Busca global unificada — v1.6
- * Um único endpoint retorna jogos, usuários e listas
+ * Busca global unificada — v1.10.4
+ *
+ * Retorna jogos, usuários e listas em um único endpoint.
+ * Também registra a métrica da busca na fila persistente, sem bloquear a resposta.
  */
 
 import { Router } from 'express';
 import { prisma } from '../utils/prisma';
 import { calcMedia } from '../utils/helpers';
-import { optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
 import { addSearchJob } from '../queue/searchQueue';
 
 export const searchRouter = Router();
 
+function enqueueGlobalSearchMetric(termo: string, resultados: number): void {
+  void addSearchJob({
+    termo,
+    id_usuario: null,
+    resultados,
+    created_at: new Date(),
+  }).catch(error => {
+    console.error('[QUEUE] Falha ao persistir job de busca global:', error);
+  });
+}
+
 // GET /search?q=termo
-searchRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
+searchRouter.get('/', async (req, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     if (q.length < 2) return res.json({ games: [], users: [], lists: [] });
@@ -38,19 +50,16 @@ searchRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
       }),
     ]);
 
-    const result = {
+    const payload = {
       games: games.map(g => { const { avaliacoes: _, ...rest } = calcMedia(g); return rest; }),
       users,
       lists,
     };
 
-    addSearchJob({
-      termo:      q,
-      id_usuario: req.usuario?.id_usuario ?? null,
-      resultados: result.games.length,
-      created_at: new Date(),
-    });
+    res.json(payload);
 
-    return res.json(result);
+    // Registra a métrica depois do envio da resposta HTTP.
+    enqueueGlobalSearchMetric(q, payload.games.length);
+    return;
   } catch (err) { next(err); }
 });

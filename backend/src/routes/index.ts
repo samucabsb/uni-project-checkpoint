@@ -11,7 +11,7 @@ import { diaryRouter }   from './diary.routes';
 export const routes = Router();
 
 routes.get('/health', (_req, res) =>
-  res.json({ status: 'ok', versao: '1.9.2', timestamp: new Date().toISOString() }),
+  res.json({ status: 'ok', versao: '1.10.4', timestamp: new Date().toISOString() }),
 );
 
 routes.use('/auth',                     authRouter);

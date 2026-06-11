@@ -1,5 +1,5 @@
 // ============================================================
-// Checkpoint v1.10 — Schema Prisma (SQLite)
+// Checkpoint v1.10.4 — Schema Prisma (SQLite)
 // Mudanças v1.10:
 //   - TAB_BUSCA_JOGO: tabela de métricas de busca (paralelismo)
 //     Populada pelo searchWorker em background
@@ -39,6 +39,7 @@ model TAB_USUARIO {
   diario          TAB_DIARIO_JOGO[]
   likes_listas    TAB_LIKE_LISTA[]
   buscas          TAB_BUSCA_JOGO[]
+  filas_busca     FilaBusca[]
 
   @@index([nm_usuario])
   @@map("TAB_USUARIO")
@@ -254,4 +255,27 @@ model TAB_BUSCA_JOGO {
   @@index([termo])
   @@index([created_at])
   @@map("TAB_BUSCA_JOGO")
+}
+
+// ── NOVO v1.10.4 — Fila persistente de busca ─────────────
+// Evidência de distribuição mínima: a API grava jobs nesta tabela
+// e um processo separado (worker) consome os jobs em background.
+model FilaBusca {
+  id_fila     Int       @id @default(autoincrement())
+  termo       String
+  id_usuario  Int?
+  resultados  Int       @default(0)
+  status      String    @default("PENDENTE") // PENDENTE | PROCESSANDO | CONCLUIDO | ERRO
+  erro        String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  started_at  DateTime?
+  finished_at DateTime?
+
+  usuario TAB_USUARIO? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+
+  @@index([status, created_at])
+  @@index([termo])
+  @@index([id_usuario])
+  @@map("TAB_FILA_BUSCA")
 }
