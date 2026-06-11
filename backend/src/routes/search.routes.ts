@@ -6,11 +6,13 @@
 import { Router } from 'express';
 import { prisma } from '../utils/prisma';
 import { calcMedia } from '../utils/helpers';
+import { optionalAuth, AuthRequest } from '../middlewares/authMiddleware';
+import { addSearchJob } from '../queue/searchQueue';
 
 export const searchRouter = Router();
 
 // GET /search?q=termo
-searchRouter.get('/', async (req, res, next) => {
+searchRouter.get('/', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     if (q.length < 2) return res.json({ games: [], users: [], lists: [] });
@@ -36,10 +38,19 @@ searchRouter.get('/', async (req, res, next) => {
       }),
     ]);
 
-    return res.json({
+    const result = {
       games: games.map(g => { const { avaliacoes: _, ...rest } = calcMedia(g); return rest; }),
       users,
       lists,
+    };
+
+    addSearchJob({
+      termo:      q,
+      id_usuario: req.usuario?.id_usuario ?? null,
+      resultados: result.games.length,
+      created_at: new Date(),
     });
+
+    return res.json(result);
   } catch (err) { next(err); }
 });
