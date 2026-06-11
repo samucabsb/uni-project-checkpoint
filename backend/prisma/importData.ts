@@ -14,6 +14,8 @@ async function main() {
   console.log('\n🌱 Checkpoint v1.9.2 — seed\n');
 
   // Limpar na ordem correta (dependências primeiro)
+  await prisma.filaBusca.deleteMany();
+  await prisma.tAB_BUSCA_JOGO.deleteMany();
   await prisma.tAB_ATIVIDADE.deleteMany();
   await prisma.tAB_DIARIO_JOGO.deleteMany();
   await prisma.tAB_COMENTARIO_REVIEW.deleteMany();

@@ -1,57 +1,66 @@
 /**
- * searchQueue.ts — Checkpoint v1.10
+ * searchQueue.ts — Checkpoint v1.10.4
  *
- * Fila em memória para processamento paralelo de buscas de jogos.
- * Implementa o padrão Producer/Consumer desacoplado da requisição HTTP.
+ * Fila persistente para processamento de buscas de jogos.
  *
  * Arquitetura:
- *   Route (Producer) → addSearchJob() → queue[] → Worker (Consumer) → Banco
+ *   Route (Producer) → TAB_FILA_BUSCA → Worker separado (Consumer) → TAB_BUSCA_JOGO
  *
- * Nota: Fila em memória é suficiente para demonstração acadêmica.
- * Em produção, substituir por Redis + BullMQ.
+ * Motivo da mudança v1.10.4:
+ *   - Remove o armazenamento volátil da fila.
+ *   - Permite executar API e worker em processos separados.
+ *   - Mantém evidência auditável no banco para apresentação acadêmica.
  */
 
+import { prisma } from '../utils/prisma';
+
 export type SearchJob = {
-  termo:      string;
+  termo: string;
   id_usuario: number | null;
   resultados: number;
-  created_at: Date;
+  created_at?: Date;
 };
 
-// Fila FIFO em memória
-const queue: SearchJob[] = [];
+export type QueueStats = {
+  pendentes: number;
+  processando: number;
+  processados: number;
+  erros: number;
+  adicionados: number;
+};
 
-// Contadores para evidência de execução
-let totalAdded    = 0;
-let totalConsumed = 0;
+/**
+ * Producer: registra um job na fila persistente.
+ *
+ * Observação importante:
+ * A rota HTTP chama esta função em modo fire-and-forget. Se a fila falhar,
+ * a busca do usuário continua funcionando e a falha fica registrada em log.
+ */
+export async function addSearchJob(job: SearchJob): Promise<void> {
+  const created = await prisma.filaBusca.create({
+    data: {
+      termo: job.termo,
+      id_usuario: job.id_usuario,
+      resultados: job.resultados,
+      status: 'PENDENTE',
+      created_at: job.created_at ?? new Date(),
+    },
+  });
 
-/** Adiciona um job na fila (Producer — chamado pela rota de busca) */
-export function addSearchJob(job: SearchJob): void {
-  queue.push(job);
-  totalAdded++;
-  console.log(`[QUEUE] Job adicionado | termo: "${job.termo}" | fila: ${queue.length} | total: ${totalAdded}`);
+  console.log(
+    `[QUEUE] Job persistido | id: ${created.id_fila} | termo: "${created.termo}" | status: ${created.status}`,
+  );
 }
 
-/** Remove e retorna o próximo job da fila (Consumer — chamado pelo worker) */
-export function getNextJob(): SearchJob | undefined {
-  return queue.shift();
-}
+/** Retorna estatísticas reais da fila persistente. */
+export async function getQueueStats(): Promise<QueueStats> {
+  const [pendentes, processando, processados, erros, adicionados] = await Promise.all([
+    prisma.filaBusca.count({ where: { status: 'PENDENTE' } }),
+    prisma.filaBusca.count({ where: { status: 'PROCESSANDO' } }),
+    prisma.filaBusca.count({ where: { status: 'CONCLUIDO' } }),
+    prisma.filaBusca.count({ where: { status: 'ERRO' } }),
+    prisma.filaBusca.count(),
+  ]);
 
-/** Retorna o tamanho atual da fila */
-export function queueSize(): number {
-  return queue.length;
-}
-
-/** Incrementa contador de jobs consumidos */
-export function incrementConsumed(): void {
-  totalConsumed++;
-}
-
-/** Retorna estatísticas da fila para diagnóstico */
-export function getQueueStats() {
-  return {
-    pendentes:  queue.length,
-    adicionados: totalAdded,
-    processados: totalConsumed,
-  };
+  return { pendentes, processando, processados, erros, adicionados };
 }

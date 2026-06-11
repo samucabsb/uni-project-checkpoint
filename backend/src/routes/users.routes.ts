@@ -216,7 +216,7 @@ usersRouter.get('/:id', optionalAuth, async (req: AuthRequest, res, next) => {
           where:   { publica: true },
           include: {
             jogos: {
-              include: { jogo: true },
+              include: { jogo: { include: { avaliacoes: { select: { nota: true } } } } },
               orderBy: { position: 'asc' },
               take:    4,
             },
