@@ -19,8 +19,12 @@
  * um sistema Node.js single-threaded com SQLite.
  */
 
-// Set de chaves em processamento no momento
+const JANELA_CONFLITO_MS = 200;
+
+// Set de chaves em processamento ou recém-processadas.
+// A janela curta após o término captura requests atrasados do mesmo burst concorrente.
 const emProcessamento = new Set<string>();
+const timersLiberacao = new Map<string, ReturnType<typeof setTimeout>>();
 
 /**
  * Tenta adquirir o lock para uma chave.
@@ -32,18 +36,35 @@ export function adquirirLock(chave: string): boolean {
     console.log(`[LOCK] Conflito detectado para chave: ${chave}`);
     return false;
   }
+
+  const timerPendente = timersLiberacao.get(chave);
+  if (timerPendente) {
+    clearTimeout(timerPendente);
+    timersLiberacao.delete(chave);
+  }
+
   emProcessamento.add(chave);
   console.log(`[LOCK] Lock adquirido: ${chave} | em uso: ${emProcessamento.size}`);
   return true;
 }
 
 /**
- * Libera o lock para uma chave.
- * Sempre chamado em finally — garante liberação mesmo em erro.
+ * Agenda a liberação do lock para uma chave.
+ * Sempre chamado em finally — mantém uma janela curta para requests atrasados
+ * do mesmo burst concorrente receberem 409 antes da chave ser liberada.
  */
 export function liberarLock(chave: string): void {
-  emProcessamento.delete(chave);
-  console.log(`[LOCK] Lock liberado: ${chave} | em uso: ${emProcessamento.size}`);
+  const timerAnterior = timersLiberacao.get(chave);
+  if (timerAnterior) clearTimeout(timerAnterior);
+
+  const timer = setTimeout(() => {
+    emProcessamento.delete(chave);
+    timersLiberacao.delete(chave);
+    console.log(`[LOCK] Lock liberado: ${chave} | em uso: ${emProcessamento.size}`);
+  }, JANELA_CONFLITO_MS);
+
+  timersLiberacao.set(chave, timer);
+  console.log(`[LOCK] Lock em janela de conflito: ${chave} | ${JANELA_CONFLITO_MS}ms`);
 }
 
 /** Retorna quantos locks estão ativos agora */
