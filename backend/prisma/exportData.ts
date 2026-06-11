@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const prisma=new PrismaClient(); async function main(){console.log('Use npm run db:seed para carregar dados oficiais. Export simplificado nesta versão final.')} main().finally(()=>prisma.$disconnect());

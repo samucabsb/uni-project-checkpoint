@@ -1,0 +1,14 @@
+[
+  {
+    "seguidor": "player_one",
+    "seguido": "gamer_br"
+  },
+  {
+    "seguidor": "casual_gamer",
+    "seguido": "gamer_br"
+  },
+  {
+    "seguidor": "gamer_br",
+    "seguido": "player_one"
+  }
+]

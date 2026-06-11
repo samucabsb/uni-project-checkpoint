@@ -1,0 +1,572 @@
+[
+  {
+    "nm_jogo": "The Last of Us Part II",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ziw.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Cinco anos após os eventos da primeira parte, Ellie embarca em uma jornada brutal por vingança que questiona os limites da moral e os ciclos de violência. Um dos jogos mais corajosos e tecnicamente deslumbrantes de sua geração.",
+    "dt_jogo": "2020-06-19"
+  },
+  {
+    "nm_jogo": "God of War Ragnarök",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2322010/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Kratos e Atreus enfrentam a iminência do Ragnarök enquanto percorrem os Nove Reinos, aprofundando uma das relações pai e filho mais bem escritas dos videogames. Escopo épico com coração genuinamente humano.",
+    "dt_jogo": "2022-11-09"
+  },
+  {
+    "nm_jogo": "Minecraft",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8fu6.jpg",
+    "genero": "Sandbox/Sobrevivência",
+    "plataforma": "PC/Xbox/PS4/Switch/Mobile",
+    "classificacao": "Livre",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "Um mundo infinito e proceduralmente gerado onde a única regra é que não existem regras. Construa, explore, sobreviva e crie — o jogo mais vendido da história não precisa de muito mais para se justificar.",
+    "dt_jogo": "2011-11-18"
+  },
+  {
+    "nm_jogo": "Elden Ring",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1245620/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo/Co-op/PvP",
+    "descricao": "O mundo aberto concebido por Hidetaka Miyazaki e George R.R. Martin expande a fórmula Souls para horizontes sem precedentes. Cada colina esconde um segredo, cada inimigo conta uma história.",
+    "dt_jogo": "2022-02-25"
+  },
+  {
+    "nm_jogo": "Grand Theft Auto V",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/271590/library_600x900.jpg",
+    "genero": "Ação/Mundo Aberto",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "Três criminosos com personalidades díspares são forçados a trabalhar juntos em golpes cada vez mais ambiciosos em uma Los Angeles alternativa. Narrativa satírica sobre o sonho americano que ainda não foi superada.",
+    "dt_jogo": "2013-09-17"
+  },
+  {
+    "nm_jogo": "Red Dead Redemption 2",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1174180/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "A saga de Arthur Morgan, fora-da-lei em busca de redenção num oeste americano que já não tem lugar para homens como ele. Uma das narrativas mais humanas e melancólicas que um jogo já entregou.",
+    "dt_jogo": "2018-10-26"
+  },
+  {
+    "nm_jogo": "Hollow Knight",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/367520/library_600x900.jpg",
+    "genero": "Metroidvania",
+    "plataforma": "PC/Switch/PS4/Xbox",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Um cavaleiro inseto silencioso explora um reino subterrâneo em ruínas habitado por criaturas esquecidas. Atmosfera opressiva, combate preciso e um mundo com profundidade de lore extraordinária para seu preço.",
+    "dt_jogo": "2017-02-24"
+  },
+  {
+    "nm_jogo": "Valorant",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg",
+    "genero": "FPS Tático",
+    "plataforma": "PC",
+    "classificacao": "16+",
+    "jogadores": "Multiplayer",
+    "descricao": "Agentes com habilidades únicas competem em partidas táticas 5v5 onde cada bala conta e a comunicação é tão importante quanto a mira. A Riot Games criou o competidor mais sério do CS em anos.",
+    "dt_jogo": "2020-06-02"
+  },
+  {
+    "nm_jogo": "The Legend of Zelda: Tears of the Kingdom",
+    "img_jogo": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "Nintendo Switch",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Link explora não apenas Hyrule mas também ilhas flutuantes nos céus e cavernas subterrâneas usando novas habilidades que permitem criar máquinas e fundír objetos. Uma sequência que supera o original de formas inesperadas.",
+    "dt_jogo": "2023-05-12"
+  },
+  {
+    "nm_jogo": "Sekiro: Shadows Die Twice",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/814380/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "Um shinobi retorna de entre os mortos para vingar seu mestre e recuperar sua honra no Japão feudal. O combate de precisão sem espaço para erros exige que o jogador domine cada encontro com reflexo, técnica e paciência.",
+    "dt_jogo": "2019-03-22"
+  },
+  {
+    "nm_jogo": "Dark Souls III",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/374320/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo/Co-op/PvP",
+    "descricao": "A conclusão épica da trilogia Souls mergulha o jogador em um reino em chamas onde a linha entre vida e morte se dissolve. Encontros memoráveis e um lore denso recompensam quem persiste além da dificuldade brutal.",
+    "dt_jogo": "2016-04-12"
+  },
+  {
+    "nm_jogo": "The Witcher 3: Wild Hunt",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/292030/library_600x900.jpg",
+    "genero": "RPG",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Geralt de Rívia parte em busca de sua filha adotiva enquanto caçadores do apocalipse varrem o continente. Um dos mundos abertos mais ricos já criados, com decisões que moldam genuinamente a narrativa.",
+    "dt_jogo": "2015-05-19"
+  },
+  {
+    "nm_jogo": "Cyberpunk 2077",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1091500/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "No neon e asfalto de Night City, um mercenário se vê compartilhando a mente com a memória de uma lenda rebelde. Visualmente deslumbrante e narrativamente denso, entrega uma das melhores histórias do gênero.",
+    "dt_jogo": "2020-12-10"
+  },
+  {
+    "nm_jogo": "Persona 5 Royal",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1687950/library_600x900.jpg",
+    "genero": "JRPG",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "Um grupo de adolescentes com poderes sobrenaturais invade corações corrompidos para roubar tesouros que mudam vidas. Estilo visual incomparável, combate refinado e personagens com profundidade emocional real.",
+    "dt_jogo": "2020-03-31"
+  },
+  {
+    "nm_jogo": "Final Fantasy VII Remake Intergrade",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1462040/library_600x900.jpg",
+    "genero": "JRPG / Ação",
+    "plataforma": "PC/PS4/PS5",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "A jornada clássica de Cloud Strife contra a corporação Shinra é reimaginada com combate em tempo real e produção cinematográfica de alto nível. Uma releitura respeitosa que expande o material original de forma significativa.",
+    "dt_jogo": "2021-06-10"
+  },
+  {
+    "nm_jogo": "Baldur's Gate 3",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1086940/library_600x900.jpg",
+    "genero": "RPG",
+    "plataforma": "PC/PS5/Mac",
+    "classificacao": "18+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Uma aventura épica baseada em D&D 5ª edição, onde cada decisão tem consequências inesperadas e o multijogador cooperativo eleva ainda mais a experiência. O maior RPG da geração em escopo e profundidade.",
+    "dt_jogo": "2023-08-03"
+  },
+  {
+    "nm_jogo": "Monster Hunter: World",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/582010/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "12+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Caçadores exploram um ecossistema vivo para rastrear e derrotar criaturas colossais usando cada elemento do ambiente a seu favor. O ciclo de caça, coleta e aprimoramento de equipamentos cria uma adição genuína.",
+    "dt_jogo": "2018-01-26"
+  },
+  {
+    "nm_jogo": "Nioh 2",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1325200/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Ambientado no Japão feudal, o jogo exige que o jogador domine um vasto arsenal de armas e habilidades demoníacas para sobreviver. Mais profundo e generoso que seu antecessor, é a melhor versão da fórmula.",
+    "dt_jogo": "2020-03-13"
+  },
+  {
+    "nm_jogo": "Dragon's Dogma 2",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2054970/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Um mundo fantasioso habitado por criaturas imensas que podem ser escaladas e combatidas em vários andares. O sistema de Peões e os encontros emergentes criam histórias únicas a cada partida.",
+    "dt_jogo": "2024-03-22"
+  },
+  {
+    "nm_jogo": "Ghost of Tsushima: Director's Cut",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2215430/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Um samurai solitário defende sua ilha natal de uma invasão mongol, enfrentando o dilema entre honra e eficácia. Combate fluido, fotografia deslumbrante e um modo cooperativo surpreendentemente sólido.",
+    "dt_jogo": "2021-08-20"
+  },
+  {
+    "nm_jogo": "Death Stranding: Director's Cut",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1850570/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo/Assimétrico",
+    "descricao": "Conectar cidades isoladas em uma América pós-apocalíptica é a missão de Sam Porter Bridges, num jogo que transforma caminhadas em meditação sobre conexão humana. Divisivo mas inegavelmente único.",
+    "dt_jogo": "2021-09-24"
+  },
+  {
+    "nm_jogo": "Control: Ultimate Edition",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/870780/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "O Federal Bureau of Control torna-se palco de eventos paranormais quando sua diretora desaparece misteriosamente. Jogabilidade de ação dinâmica com mecânicas de telecinese e um mistério que se desdobra em camadas fascinantes.",
+    "dt_jogo": "2019-08-27"
+  },
+  {
+    "nm_jogo": "Marvel's Spider-Man: Miles Morales",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1817190/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Miles Morales aprende o que significa ser o Homem-Aranha ao defender seu bairro durante as festas de Natal. Uma história emotiva e compacta com movimentação extraordinariamente satisfatória.",
+    "dt_jogo": "2020-11-12"
+  },
+  {
+    "nm_jogo": "Hogwarts Legacy",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/990080/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Um estudante com habilidades incomuns chega a Hogwarts no século XIX e descobre uma conspiração de bruxos. A melhor representação do universo Harry Potter em formato de jogo, com um mundo aberto surpreendentemente detalhado.",
+    "dt_jogo": "2023-02-10"
+  },
+  {
+    "nm_jogo": "Horizon Forbidden West",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2420110/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PS4/PS5/PC",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Aloy viaja para terras proibidas a oeste para descobrir por que as máquinas ficaram mais agressivas e o planeta está morrendo. Sequência que expande gameplay, narrativa e mundo de forma ambiciosa.",
+    "dt_jogo": "2022-02-18"
+  },
+  {
+    "nm_jogo": "Assassin's Creed Mirage",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/3035570/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Um retorno deliberado às raízes da série, com Basim percorrendo as ruas de Bagdá do século IX em missões de assassinato planejado. Mais focado e intimista que as entradas recentes, elegante na sua simplicidade.",
+    "dt_jogo": "2023-10-05"
+  },
+  {
+    "nm_jogo": "Batman: Arkham Knight",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/208650/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "A saga do Batman de Rocksteady culmina em uma Gotham City em colapso, com o Cavaleiro das Trevas enfrentando uma aliança de vilões. O Batmóvel controverso não obscurece uma narrativa de super-herói entre as melhores do gênero.",
+    "dt_jogo": "2015-06-23"
+  },
+  {
+    "nm_jogo": "Death's Door",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/894020/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Um corvo trabalha como ceifador coletando almas de criaturas que se recusam a morrer. Combate preciso, direção de arte marcante e uma narrativa inesperadamente emotiva sobre envelhecimento e perda.",
+    "dt_jogo": "2021-07-20"
+  },
+  {
+    "nm_jogo": "DOOM Eternal",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/782330/library_600x900.jpg",
+    "genero": "FPS",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "18+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "O Exterminador coloca o jogador em movimento constante enquanto dilacera demônios de formas cada vez mais criativas. O pico do design de FPS moderno, que exige gerenciamento simultâneo de recursos e agressividade calculada.",
+    "dt_jogo": "2020-03-20"
+  },
+  {
+    "nm_jogo": "Titanfall 2",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1237970/library_600x900.jpg",
+    "genero": "FPS",
+    "plataforma": "PC/PS4/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "Uma das campanhas de FPS mais inventivas já criadas, seguida de um multijogador que combina pilotos ágeis e titãs mecânicos em equilíbrio perfeito. Subestimado no lançamento e aclamado por anos depois.",
+    "dt_jogo": "2016-10-28"
+  },
+  {
+    "nm_jogo": "Metro Exodus",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/412020/library_600x900.jpg",
+    "genero": "FPS / Sobrevivência",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Artyom e os Espartanos deixam o metrô de Moscou para explorar a Rússia pós-nuclear em uma viagem épica. Atmosfera opressiva e um sistema de sobrevivência que recompensa exploração cuidadosa e julgamento moral.",
+    "dt_jogo": "2019-02-15"
+  },
+  {
+    "nm_jogo": "Deathloop",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1252330/library_600x900.jpg",
+    "genero": "FPS / Furtividade",
+    "plataforma": "PC/PS5",
+    "classificacao": "18+",
+    "jogadores": "Solo/Assimétrico",
+    "descricao": "Dois assassinos presos num loop temporal se perseguem numa ilha luxuosa dos anos 60. A estrutura de puzzle que se desdobra ao longo de horas de descoberta é brilhante em sua engenharia.",
+    "dt_jogo": "2021-09-14"
+  },
+  {
+    "nm_jogo": "Returnal",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1649240/library_600x900.jpg",
+    "genero": "Roguelite / Shooter",
+    "plataforma": "PS5/PC",
+    "classificacao": "18+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Uma astronauta presa num loop mortal explora um planeta alienígena hostil em cada vida. Roguelite de tiro com dificuldade extrema e uma narrativa enigmática que exige atenção para decifrar.",
+    "dt_jogo": "2021-04-30"
+  },
+  {
+    "nm_jogo": "Atomic Heart",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/668580/library_600x900.jpg",
+    "genero": "FPS / Ação",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Numa União Soviética alternativa dos anos 50, robôs rebelam-se contra seus criadores e um agente secreto investiga. Visualmente exuberante com combate caótico e ambientação que transita entre retrofuturismo e alucinação.",
+    "dt_jogo": "2023-02-21"
+  },
+  {
+    "nm_jogo": "Helldivers 2",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/553850/library_600x900.jpg",
+    "genero": "Ação / Co-op",
+    "plataforma": "PC/PS5",
+    "classificacao": "18+",
+    "jogadores": "Co-op",
+    "descricao": "Soldados de elite são lançados em planetas hostis para eliminar ameaças à Democracia Gerenciada em missões cooperativas para quatro jogadores. Senso de humor afiado e o melhor jogo de co-op cooperativo dos últimos anos.",
+    "dt_jogo": "2024-02-08"
+  },
+  {
+    "nm_jogo": "Celeste",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/504230/library_600x900.jpg",
+    "genero": "Plataforma",
+    "plataforma": "PC/PS4/Xbox/Switch",
+    "classificacao": "Livre",
+    "jogadores": "Solo",
+    "descricao": "Madeline escala uma montanha mágica enquanto enfrenta seus próprios demônios internos. Plataforma de precisão com design de fases impecável e uma das representações mais honestas sobre saúde mental nos videogames.",
+    "dt_jogo": "2018-01-25"
+  },
+  {
+    "nm_jogo": "Hades",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1145360/library_600x900.jpg",
+    "genero": "Roguelite / Ação",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "O filho do deus dos mortos tenta escapar do submundo em infinitas corridas recompensadoras. Cada derrota avança a história, tornando o ciclo de morte e recomeço genuinamente viciante e narrativamente satisfatório.",
+    "dt_jogo": "2020-09-17"
+  },
+  {
+    "nm_jogo": "Cuphead",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/268910/library_600x900.jpg",
+    "genero": "Plataforma / Run-and-gun",
+    "plataforma": "PC/PS4/Xbox/Switch",
+    "classificacao": "7+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Dois irmãos vendem suas almas ao Diabo e devem vencer batalhas impossíveis para recuperá-las. Animação dos anos 30 impecável combinada com boss fights entre os mais difíceis e memoráveis do gênero.",
+    "dt_jogo": "2017-09-29"
+  },
+  {
+    "nm_jogo": "Ori and the Will of the Wisps",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1057090/library_600x900.jpg",
+    "genero": "Metroidvania",
+    "plataforma": "PC/Xbox/Switch/PS4/PS5",
+    "classificacao": "Livre",
+    "jogadores": "Solo",
+    "descricao": "O espírito Ori parte em nova jornada por terras encantadas, descobrindo sua verdadeira origem. Movimentação extraordinariamente fluida, visuais de tirar o fôlego e trilha sonora que rivaliza com produções cinematográficas.",
+    "dt_jogo": "2020-03-11"
+  },
+  {
+    "nm_jogo": "Tunic",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/553420/library_600x900.jpg",
+    "genero": "Ação/Aventura",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "7+",
+    "jogadores": "Solo",
+    "descricao": "Uma raposa diminuta explora um mundo misterioso, reconstruindo um manual de instruções fragmentado ao longo da aventura. Homenagem discreta aos RPGs de ação clássicos que revela camadas crescentes de profundidade.",
+    "dt_jogo": "2022-03-16"
+  },
+  {
+    "nm_jogo": "Inscryption",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1092790/library_600x900.jpg",
+    "genero": "Roguelite / Deck-building",
+    "plataforma": "PC/PS4/PS5",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "Um baralho de cartas sombrio onde as regras mudam constantemente e os limites entre jogo e realidade começam a se dissolver. Meta-narrativa perturbadora que é impossível de descrever sem arruinar a descoberta.",
+    "dt_jogo": "2021-10-19"
+  },
+  {
+    "nm_jogo": "Return of the Obra Dinn",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/653530/library_600x900.jpg",
+    "genero": "Puzzle / Mistério",
+    "plataforma": "PC/PS4/Xbox/Switch/Mac",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Como investigador de seguros, o jogador usa visões do momento da morte para identificar o destino de 60 tripulantes de um navio fantasma. Puzzle dedutivo único que premia raciocínio lógico e paciência.",
+    "dt_jogo": "2018-10-18"
+  },
+  {
+    "nm_jogo": "Outer Wilds",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/753640/library_600x900.jpg",
+    "genero": "Exploração / Aventura",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "Livre",
+    "jogadores": "Solo",
+    "descricao": "Um sistema solar minúsculo preso num loop de 22 minutos esconde os vestígios de uma civilização extinta. Uma das experiências de exploração e descoberta mais profundas já criadas — deve ser vivenciada sem spoilers.",
+    "dt_jogo": "2019-05-29"
+  },
+  {
+    "nm_jogo": "Disco Elysium: The Final Cut",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/632470/library_600x900.jpg",
+    "genero": "RPG",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Um detetive com amnésia e crise existencial investiga um homicídio numa cidade portuária decadente. RPG narrativo de escrita excepcional onde cada conversa é ao mesmo tempo investigação e terapia involuntária.",
+    "dt_jogo": "2021-03-30"
+  },
+  {
+    "nm_jogo": "Undertale",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/391540/library_600x900.jpg",
+    "genero": "RPG",
+    "plataforma": "PC/PS4/Switch/Mac",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Personagens que deveriam ser inimigos têm histórias e motivações próprias nesse RPG que questiona por que precisamos matar para progredir. Pequeno em escopo, imenso em impacto emocional e criatividade mecânica.",
+    "dt_jogo": "2015-09-15"
+  },
+  {
+    "nm_jogo": "Stardew Valley",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/413150/library_600x900.jpg",
+    "genero": "Simulação / RPG",
+    "plataforma": "PC/PS4/Xbox/Switch/Mobile",
+    "classificacao": "Livre",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Herdando uma fazenda em ruínas, o jogador constrói uma vida no interior enquanto cultiva, pesca, minera e forma laços com os moradores da cidade. Um dos jogos mais relaxantes e absorventes já feitos por uma única pessoa.",
+    "dt_jogo": "2016-02-26"
+  },
+  {
+    "nm_jogo": "Vampire Survivors",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1794680/library_600x900.jpg",
+    "genero": "Roguelite / Sobrevivência",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch/Mobile",
+    "classificacao": "12+",
+    "jogadores": "Solo/Co-op",
+    "descricao": "Sobreviver a hordas crescentes de inimigos é o único objetivo nesse roguelite minimalista onde a tela eventualmente colapsa sob projéteis. Simples, viciante e extraordinariamente eficiente no que propõe.",
+    "dt_jogo": "2022-10-20"
+  },
+  {
+    "nm_jogo": "Dave the Diver",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1868140/library_600x900.jpg",
+    "genero": "Aventura / Simulação",
+    "plataforma": "PC/Switch/PS4/PS5",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "Um mergulhador explora as profundezas do mar de dia e gerencia um restaurante de sushi à noite. A combinação improvável funciona perfeitamente, criando um dos jogos mais encantadores e variados de 2023.",
+    "dt_jogo": "2023-06-28"
+  },
+  {
+    "nm_jogo": "Slay the Spire",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/646570/library_600x900.jpg",
+    "genero": "Roguelite / Deck-building",
+    "plataforma": "PC/PS4/Xbox/Switch/Mobile",
+    "classificacao": "12+",
+    "jogadores": "Solo",
+    "descricao": "A cada corrida, o jogador constrói um baralho único enquanto sobe por uma torre repleta de monstros e relíquias. Fundou o gênero dos deck-builders roguelite e continua sendo o padrão de referência do gênero.",
+    "dt_jogo": "2019-01-23"
+  },
+  {
+    "nm_jogo": "Resident Evil Village",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1196590/library_600x900.jpg",
+    "genero": "Horror / Sobrevivência",
+    "plataforma": "PC/PS4/PS5/Xbox/Switch",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Ethan Winters busca sua filha raptada num vilarejo europeu governado por uma aristocracia monstruosa. Terror de ação que equilibra sustos e adrenalina com um senso de humor camp absolutamente intencional.",
+    "dt_jogo": "2021-05-07"
+  },
+  {
+    "nm_jogo": "Resident Evil 4 Remake",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2050650/library_600x900.jpg",
+    "genero": "Horror / Ação",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Leon Kennedy resgata a filha do presidente numa aldeia espanhola infestada por um parasita de controle mental. Uma das maiores remakes da história, que moderniza mecânicas sem sacrificar o ritmo do original.",
+    "dt_jogo": "2023-03-24"
+  },
+  {
+    "nm_jogo": "Dead Space",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1693980/library_600x900.jpg",
+    "genero": "Horror / Sobrevivência",
+    "plataforma": "PC/PS5/Xbox",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "Isaac Clarke, engenheiro espacial, responde a um sinal de socorro de uma nave mineradora e encontra algo muito pior. Horror claustrofóbico com desmembramento estratégico, reinventado com maestria visual e sonora.",
+    "dt_jogo": "2023-01-27"
+  },
+  {
+    "nm_jogo": "Street Fighter 6",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1364780/library_600x900.jpg",
+    "genero": "Luta",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "12+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "A série retorna com o modo World Tour, sistema de controle moderno para novatos e uma lista de lutadores impecável. O mais acessível da franquia sem sacrificar a profundidade competitiva que a define.",
+    "dt_jogo": "2023-06-02"
+  },
+  {
+    "nm_jogo": "Tekken 8",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1778820/library_600x900.jpg",
+    "genero": "Luta",
+    "plataforma": "PC/PS5/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "O conflito geracional entre Kazuya e Jin chega ao clímax nesta entrega que apresenta novos jogadores ao combate 3D sem alijar a meta competitiva profunda que os veteranos esperam.",
+    "dt_jogo": "2024-01-26"
+  },
+  {
+    "nm_jogo": "Mortal Kombat 1",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/1971870/library_600x900.jpg",
+    "genero": "Luta",
+    "plataforma": "PC/PS5/Xbox/Switch",
+    "classificacao": "18+",
+    "jogadores": "Solo/Multiplayer",
+    "descricao": "A linha do tempo é reiniciada com Liu Kang como guardião do tempo e uma nova geração de lutadores redescobre seus poderes. Fatalities mais elaboradas do que nunca e modo história com produção cinematográfica.",
+    "dt_jogo": "2023-09-19"
+  },
+  {
+    "nm_jogo": "Black Myth: Wukong",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2358720/library_600x900.jpg",
+    "genero": "Action RPG",
+    "plataforma": "PC/PS5",
+    "classificacao": "18+",
+    "jogadores": "Solo",
+    "descricao": "O Rei Macaco renasce para enfrentar deuses e demônios da mitologia chinesa num action RPG de alto nível visual. O primeiro grande jogo chinês a rivalizar em produção com os maiores AAAs ocidentais.",
+    "dt_jogo": "2024-08-20"
+  },
+  {
+    "nm_jogo": "Metaphor: ReFantazio",
+    "img_jogo": "https://cdn.akamai.steamstatic.com/steam/apps/2679460/library_600x900.jpg",
+    "genero": "JRPG",
+    "plataforma": "PC/PS4/PS5/Xbox",
+    "classificacao": "16+",
+    "jogadores": "Solo",
+    "descricao": "Num reino de fantasia medieval, um jovem sem status nobiliárquico concorre ao trono e enfrenta criaturas nascidas do medo coletivo. O RPG mais ambicioso do estúdio de Persona 5 em todos os aspectos.",
+    "dt_jogo": "2024-10-11"
+  }
+]

@@ -1,0 +1,1 @@
+import fs from 'fs';import path from 'path';const db=path.join(__dirname,'dev.db');const dir=path.join(__dirname,'..','backups');if(!fs.existsSync(db)){console.log('Banco não encontrado.');process.exit(0)}if(!fs.existsSync(dir))fs.mkdirSync(dir,{recursive:true});const out=path.join(dir,`checkpoint-final-${Date.now()}.db`);fs.copyFileSync(db,out);console.log('Backup criado:',out);
